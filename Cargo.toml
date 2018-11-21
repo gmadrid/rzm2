@@ -1,0 +1,6 @@
+[package]
+name = "rzm2"
+version = "0.1.0"
+authors = ["George Madrid <gmadrid@gmail.com>"]
+
+[dependencies]
