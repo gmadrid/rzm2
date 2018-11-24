@@ -1,76 +1,73 @@
 use std::io::Read;
 
-use super::handle::Handle;
+use super::addressing::ZOffset;
+use super::handle::{new_handle, Handle};
+use super::header::ZHeader;
 use super::result::Result;
 
-// Locations in the story are addressed using ZOffsets. The ZOffset is an index
-// into story memory. The ZMachine uses three types of addresses to refer to
-// memory. Each of these types maps to a ZOffset in a different way, possibly even
-// different depending on the story's ZMachine version number.
-#[derive(Clone, Copy, Debug)]
-pub struct Offset(usize);
-
-#[derive(Clone, Copy, Debug)]
-pub struct ByteAddress(u16);
-
-impl ByteAddress {
-    pub fn from_raw(word: u16) -> ByteAddress {
-        ByteAddress(word)
-    }
+// The "core memory" of the ZMachine. A memory-mapped story file.
+//
+// ZMemory provides protected access to the ZMachine's core memory.
+// Only the dynamic portion of the ZMemory is available for read/write access.
+// The static and high portions of memory are available for reading.
+//
+// Addresses may be specified using any of three types of addresses:
+//
+//   ByteAddress: access to any of the first 64K bytes in the core memory.
+//
+//   WordAddress: access to any of the first 64K words (so, 128K bytes) in core
+//     memory.
+//
+//   PackedAddress: used to reference high memory. The extent and interpretation
+//     of a PackedAddress changes depending on the ZMachine version in use.
+//
+pub struct ZMemory {
+    bytes: Box<[u8]>,
 }
 
-impl From<ByteAddress> for Offset {
-    fn from(ba: ByteAddress) -> Offset {
-        Offset(ba.0 as usize)
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct WordAddress(u16);
-
-#[derive(Clone, Copy)]
-pub struct PackedAddress(u16);
-    
-
-// A representation of a loaded story file.
-// The story file is memory-mapped into the ZMachine's "core memory", and the
-// ZStory controls access to this memory enforcing 1) read-only vs read/write
-// memory locations, mapping different types of addresses according to the
-// story version.
-pub struct ZStory {
-    bytes: Handle<[u8]>,
-}
-
-impl ZStory {
-    // Read story from rdr.
+impl ZMemory {
+    // Read initial memory state from a reader. The size of the ZMemory will be
+    // determined by the length of the data read from the reader.
     //
-    // Consumes the entire contents of the rdr.
+    // The entire reader will be consumed to create the ZMemory.
     //
-    // May fail if rdr returns an error or if the mapped memory
-    // fails consistency checks.
-    pub fn new<T: Read>(rdr: &mut T) -> Result<ZStory> {
+    // An error may be returned if the reader produces an error.
+    pub fn new<T: Read>(rdr: &mut T) -> Result<(Handle<ZMemory>, ZHeader)> {
         let mut byte_vec = Vec::<u8>::new();
         rdr.read_to_end(&mut byte_vec)?;
 
-        Ok(ZStory {
+        let zmem = new_handle(ZMemory {
             bytes: byte_vec.into(),
-        })
+        });
+
+        let header = ZHeader::new(&zmem)?;
+
+        Ok((zmem, header))
     }
 
-    pub fn read_byte(&self, index: Offset) -> u8 {
-        self.bytes[index.0]
-    }
-
-    pub fn read_word(&self, index: Offset) -> u16 {
-        let high_byte = self.bytes[index.0];
-        let low_byte = self.bytes[index.0 + 1];
-        ((high_byte as u16) << 8) + (low_byte as u16)
-    }
-
-    // The length of the story file.
-    #[cfg(test)]
-    fn story_len(&self) -> usize {
+    // The total number of bytes in the ZMemory.
+    pub fn memory_size(&self) -> usize {
         self.bytes.len()
+    }
+
+    // Read the byte at location ZOffset in the ZMemory.
+    pub fn read_byte<T>(&self, index: T) -> u8
+    where
+        T: Into<ZOffset>,
+    {
+        self.bytes[index.into().value()]
+    }
+
+    // Read the (big-endian) word at location ZOffset in ZMemory.
+    // The ZOffset need not be word-aligned.
+    pub fn read_word<T>(&self, index: T) -> u16
+    where
+        T: Into<ZOffset>,
+    {
+        let offset = index.into();
+        let high_byte = self.bytes[offset.value()];
+        let low_byte = self.bytes[offset.value() + 1];
+        ((high_byte as u16) << 8) + (low_byte as u16)
     }
 }
 
@@ -78,32 +75,43 @@ impl ZStory {
 mod test {
     use std::io::Cursor;
 
+    use super::super::addressing::ByteAddress;
+    use super::super::handle::Handle;
+    use super::super::version::ZVersion;
     use super::*;
 
-    const BYTES: &[u8] = &[3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd];
+    fn sample_bytes() -> Vec<u8> {
+        vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
+    }
+
+    fn test_mem(vers: ZVersion) -> Handle<ZMemory> {
+        let mut bytes = sample_bytes();
+        bytes[0] = vers as u8;
+        ZMemory::new(&mut Cursor::new(&bytes)).unwrap().0
+    }
 
     #[test]
     fn test_new() {
-        let zmem = ZStory::new(&mut Cursor::new(BYTES)).unwrap();
+        let zmem = test_mem(ZVersion::V3);
 
         // Check some stuff is consistent.
         // - header consistency
 
         // We read the entire array.
-        assert_eq!(BYTES.len(), zmem.story_len());
+        assert_eq!(sample_bytes().len(), zmem.memory_size());
     }
 
     #[test]
-    fn test_read_bytes() {
-        let zmem = ZStory::new(&mut Cursor::new(BYTES)).unwrap();
+    fn test_byte_address() {
+        let zmem = test_mem(ZVersion::V3);
 
-        assert_eq!(3, zmem.read_byte(Offset(0)));
-        assert_eq!(8, zmem.read_byte(Offset(5)));
+        assert_eq!(3, zmem.read_byte(ByteAddress::from_raw(0)));
+        assert_eq!(8, zmem.read_byte(ByteAddress::from_raw(5)));
 
-        assert_eq!(0x0304, zmem.read_word(Offset(0)));
-        assert_eq!(0xccdd, zmem.read_word(Offset(0x0a)));
+        assert_eq!(0x0304, zmem.read_word(ByteAddress::from_raw(0)));
+        assert_eq!(0xccdd, zmem.read_word(ByteAddress::from_raw(0x0a)));
 
-        // Try reading a word from non-word-aligned location.
-        assert_eq!(0x09cc, zmem.read_word(Offset(0x09)));
+        // Read a word from a non-word-aligned location.
+        assert_eq!(0x09cc, zmem.read_word(ByteAddress::from_raw(0x09)));
     }
 }

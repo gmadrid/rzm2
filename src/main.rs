@@ -15,7 +15,7 @@ fn run() -> Result<()> {
 fn main() {
     match run() {
         Ok(_) => (),
-//        Err(ItoolsError::Clap(err)) => println!("{}", err.description()),
+        //        Err(ItoolsError::Clap(err)) => println!("{}", err.description()),
         Err(e) => println!("Error: {:?}", e),
     }
 }
