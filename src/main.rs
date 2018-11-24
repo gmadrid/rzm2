@@ -10,6 +10,7 @@ fn run() -> Result<()> {
     let mut rdr = File::open("Zork1.z3")?;
     let mut machine = ZMachine::new(&mut rdr)?;
     machine.run();
+    println!("RAN IT");
     Ok(())
 }
 
