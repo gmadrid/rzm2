@@ -28,6 +28,8 @@ impl ZMachine {
             stack,
         })
     }
+
+    pub fn run(&mut self) {}
 }
 
 #[cfg(test)]

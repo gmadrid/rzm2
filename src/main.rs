@@ -8,7 +8,8 @@ fn run() -> Result<()> {
     // TODO: add some cmd line args.
     // TODO: read a filename.
     let mut rdr = File::open("Zork1.z3")?;
-    let _ = ZMachine::new(&mut rdr)?;
+    let mut machine = ZMachine::new(&mut rdr)?;
+    machine.run();
     Ok(())
 }
 

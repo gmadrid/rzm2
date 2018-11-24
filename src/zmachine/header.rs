@@ -4,6 +4,11 @@ use super::memory::ZMemory;
 use super::result::Result;
 use super::version::ZVersion;
 
+// Offsets for fields in the header.
+pub const OS_VERSION: u16 = 0x00;
+pub const OS_START_PC: u16 = 0x06;
+pub const OS_FILE_LEN: u16 = 0x1a;
+
 // Read a Story's Header information.
 // See ZSpec 11.
 pub struct ZHeader {
@@ -17,9 +22,11 @@ pub struct ZHeader {
 
 impl ZHeader {
     pub fn new(memory: &Handle<ZMemory>) -> Result<ZHeader> {
+        let z_version = ZVersion::new(memory.read_byte(ByteAddress::from_raw(OS_VERSION)))?;
+
         Ok(ZHeader {
             memory: memory.clone(),
-            z_version: ZVersion::new(memory.read_byte(ByteAddress::from_raw(0x00)))?,
+            z_version,
         })
     }
 
@@ -28,12 +35,12 @@ impl ZHeader {
     }
 
     pub fn start_pc(&self) -> PackedAddress {
-        let raw_value = self.memory.read_word(ByteAddress::from_raw(0x06));
+        let raw_value = self.memory.read_word(ByteAddress::from_raw(OS_START_PC));
         PackedAddress::from_raw(raw_value)
     }
 
     pub fn file_length(&self) -> usize {
-        let raw_file_length = self.memory.read_word(ByteAddress::from_raw(0x1A));
+        let raw_file_length = self.memory.read_word(ByteAddress::from_raw(OS_FILE_LEN));
         self.z_version.convert_file_length(raw_file_length)
     }
 }
