@@ -9,8 +9,7 @@ fn run() -> Result<()> {
     // TODO: read a filename.
     let mut rdr = File::open("Zork1.z3")?;
     let mut machine = ZProcessor::new(&mut rdr)?;
-    machine.run();
-    Ok(())
+    machine.run()
 }
 
 fn main() {
