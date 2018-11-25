@@ -32,6 +32,7 @@ addons:
       - binutils-dev
       - libiberty-dev
 
+# All of this mess generates coverage data and sends it to CodeCov.
 after_success: |
     wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
     tar xzf master.tar.gz &&

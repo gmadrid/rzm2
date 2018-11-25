@@ -1,4 +1,4 @@
-use super::addressing::{ByteAddress, PackedAddress};
+use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::memory::ZMemory;
 use super::result::Result;
@@ -34,9 +34,9 @@ impl ZHeader {
         self.z_version
     }
 
-    pub fn start_pc(&self) -> PackedAddress {
+    pub fn start_pc(&self) -> ByteAddress {
         let raw_value = self.memory.read_word(ByteAddress::from_raw(OS_START_PC));
-        PackedAddress::from_raw(raw_value)
+        ByteAddress::from_raw(raw_value)
     }
 
     pub fn file_length(&self) -> usize {

@@ -1,3 +1,5 @@
+use super::handle::Handle;
+use super::memory::ZMemory;
 use super::version::ZVersion;
 
 // A ZOffset is an index into ZMemory.
@@ -44,32 +46,53 @@ impl PackedAddress {
     }
 }
 
-pub struct PC(usize, ZVersion);
+pub struct PC {
+    pc: usize,
+    version: ZVersion,
+    mem_h: Handle<ZMemory>,
+}
 
 impl PC {
-    pub fn new(pa: PackedAddress, vers: ZVersion) -> PC {
-        match vers {
-            ZVersion::V3 => PC(2 * pa.0 as usize, vers),
-            ZVersion::V5 => PC(4 * pa.0 as usize, vers),
+    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T, version: ZVersion) -> PC
+    where
+        T: Into<ZOffset>,
+    {
+        PC {
+            pc: start_pc.into().0,
+            version,
+            mem_h: mem_h.clone(),
         }
     }
 
-    pub fn inc(&mut self) {
-        self.inc_by(1);
+    // pub fn inc(&mut self) {
+    //     self.inc_by(1);
+    // }
+
+    // pub fn inc_by(&mut self, increment: i16) {
+    //     if increment < 0 {
+    //         self.pc -= -increment as usize;
+    //     } else {
+    //         self.pc += increment as usize;
+    //     }
+    // }
+
+    pub fn next_byte(&mut self) -> u8 {
+        let offset = ZOffset(self.pc);
+        let byte = self.mem_h.read_byte(offset);
+        self.pc += 1;
+        byte
     }
 
-    pub fn inc_by(&mut self, increment: i16) {
-        if increment < 0 {
-            self.0 -= -increment as usize;
-        } else {
-            self.0 += increment as usize;
-        }
+    pub fn next_word(&mut self) -> u16 {
+        let high_byte = self.next_byte();
+        let low_byte = self.next_byte();
+        ((high_byte as u16) << 8) + (low_byte as u16)
     }
 }
 
 impl From<PC> for ZOffset {
     fn from(pc: PC) -> ZOffset {
-        ZOffset(pc.0)
+        ZOffset(pc.pc)
     }
 }
 
@@ -77,27 +100,27 @@ impl From<PC> for ZOffset {
 mod test {
     use super::*;
 
-    #[test]
-    fn test_pc_inc() {
-        let mut pc = PC(8, ZVersion::V3);
-        assert_eq!(8, pc.0);
-        pc.inc();
-        assert_eq!(9, pc.0);
-        pc.inc();
-        assert_eq!(10, pc.0);
-    }
+    // #[test]
+    // fn test_pc_inc() {
+    //     let mut pc = PC(8, ZVersion::V3);
+    //     assert_eq!(8, pc.0);
+    //     pc.inc();
+    //     assert_eq!(9, pc.0);
+    //     pc.inc();
+    //     assert_eq!(10, pc.0);
+    // }
 
-    #[test]
-    fn test_pc_inc_by() {
-        let mut pc = PC(13, ZVersion::V3);
-        assert_eq!(13, pc.0);
+    // #[test]
+    // fn test_pc_inc_by() {
+    //     let mut pc = PC(13, ZVersion::V3);
+    //     assert_eq!(13, pc.0);
 
-        pc.inc_by(5);
-        assert_eq!(18, pc.0);
+    //     pc.inc_by(5);
+    //     assert_eq!(18, pc.0);
 
-        pc.inc_by(-3);
-        assert_eq!(15, pc.0);
-    }
+    //     pc.inc_by(-3);
+    //     assert_eq!(15, pc.0);
+    // }
 
     #[test]
     fn test_pc_new_vers() {

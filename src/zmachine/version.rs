@@ -1,6 +1,6 @@
 use super::result::{Result, ZErr};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Eq)]
 pub enum ZVersion {
     //    V1 = 1,
     //    V2 = 2,
