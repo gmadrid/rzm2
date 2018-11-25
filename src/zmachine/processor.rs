@@ -4,7 +4,7 @@ use super::addressing::PC;
 use super::handle::Handle;
 use super::header::ZHeader;
 use super::memory::ZMemory;
-use super::opcode::ZOperand;
+use super::opcode::{ZOperand, ZVariable};
 use super::result::Result;
 use super::stack::ZStack;
 use super::version::ZVersion;
@@ -32,9 +32,12 @@ impl ZProcessor {
         })
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<()> {
         loop {
-            self.execute_opcode();
+            let result = self.execute_opcode();
+            if let Err(_) = result {
+                return result;
+            }
         }
     }
 
@@ -106,7 +109,7 @@ impl ZProcessor {
             0b10 => {
                 // Variable
                 let var = self.pc.next_byte();
-                ZOperand::Variable(var)
+                ZOperand::Var(var.into())
             }
             // Omitted
             0b11 => ZOperand::Omitted,
@@ -152,7 +155,9 @@ impl ZProcessor {
     }
 
     fn twoop_13_store(&mut self, operands: [ZOperand; 2]) -> Result<()> {
-        println!("store       ({}) {}           XXX", operands[0], operands[1]);
+        // 2OP:13 0x0D store (variable) value
+        let variable = ZVariable::from(operands[0]);
+        println!("store       ({}) {}           XXX", variable, operands[1]);
         Ok(())
     }
 
