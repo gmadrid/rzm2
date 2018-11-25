@@ -67,7 +67,7 @@ impl ZMemory {
         let offset = index.into();
         let high_byte = self.bytes[offset.value()];
         let low_byte = self.bytes[offset.value() + 1];
-        ((high_byte as u16) << 8) + (low_byte as u16)
+        (u16::from(high_byte) << 8) + u16::from(low_byte)
     }
 }
 
