@@ -46,9 +46,9 @@ impl ZProcessor {
         if byte == 0xbe && self.header.version_number() >= ZVersion::V5 {
             self.execute_extended_opcode(byte)
         } else {
-            match byte & 0b11000000 {
-                0b10000000 => self.execute_short_opcode(byte),
-                0b11000000 => self.execute_var_opcode(byte),
+            match byte & 0b1100_0000 {
+                0b1000_0000 => self.execute_short_opcode(byte),
+                0b1100_0000 => self.execute_var_opcode(byte),
                 _ => self.execute_long_opcode(byte),
             }
         }
@@ -60,7 +60,7 @@ impl ZProcessor {
 
     fn execute_short_opcode(&mut self, byte: u8) -> Result<()> {
         let opcode = byte & 0b1111;
-        let optype = (byte & 0b00110000) >> 4;
+        let optype = (byte & 0b0011_0000) >> 4;
         let operand = self.read_operand_of_type(optype);
 
         if let ZOperand::Omitted = operand {
@@ -121,13 +121,15 @@ impl ZProcessor {
         let opcode = byte & 0b11111;
         let mut operands = <[ZOperand; 2]>::default();
 
-        operands[0] = if byte & 0b01000000 == 0 {
+        // Bit 6 encodes type of first operand.
+        operands[0] = if byte & 0b0100_0000 == 0 {
             self.read_operand_of_type(0b01)
         } else {
             self.read_operand_of_type(0b10)
         };
 
-        operands[1] = if byte & 0b00100000 == 0 {
+        // Bit 5 encodes type of second operand.
+        operands[1] = if byte & 0b0010_0000 == 0 {
             self.read_operand_of_type(0b01)
         } else {
             self.read_operand_of_type(0b10)
@@ -175,8 +177,8 @@ impl ZProcessor {
     fn var_224_call(&mut self, operands: [ZOperand; 4]) -> Result<()> {
         let store = self.pc.next_byte();
         println!(
-            "call        {} {} {} {}       XXX",
-            operands[0], operands[1], operands[2], operands[3]
+            "call        {} {} {} {} -> {}      XXX",
+            operands[0], operands[1], operands[2], operands[3], store
         );
         Ok(())
     }
