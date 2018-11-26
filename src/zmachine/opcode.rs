@@ -163,10 +163,10 @@ pub mod two_op {
         Ok(true)
     }
 
+    // ZSpec: 2OP:13 0x0D store (variable) value
     pub fn o_13_store(operands: [ZOperand; 2]) -> Result<bool> {
-        // 2OP:13 0x0D store (variable) value
         let variable = ZVariable::from(operands[0]);
-        debug!("store       ({}) {}           XXX", variable, operands[1]);
+        debug!("store       {} {}             XXX", variable, operands[1]);
         Ok(true)
     }
 
