@@ -1,5 +1,8 @@
 use std::fmt;
 
+use super::result::Result;
+use super::traits::{Variables, PC};
+
 #[derive(Clone, Copy, Debug)]
 pub enum ZOperand {
     LargeConstant(u16),
@@ -65,4 +68,23 @@ impl fmt::Display for ZVariable {
             Global(g) => write!(f, "g{:02x}", g),
         }
     }
+}
+
+pub mod two_op {
+    use super::*;
+
+    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
+    where
+        P: PC,
+        V: Variables,
+    {
+        let store = pc.next_byte();
+        let variable = ZVariable::from(u8::from(store));
+        println!(
+            "add         {} {} -> {}       XXX",
+            operands[0], operands[1], variable
+        );
+        Ok(())
+    }
+
 }

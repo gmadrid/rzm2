@@ -1,35 +1,46 @@
 use std::io::Read;
 
-use super::addressing::PC;
+use super::addressing::ZPC;
 use super::handle::Handle;
 use super::header::ZHeader;
 use super::memory::ZMemory;
-use super::opcode::{ZOperand, ZVariable};
+use super::opcode::{self, ZOperand, ZVariable};
 use super::result::Result;
 use super::stack::ZStack;
+use super::traits::PC;
 use super::version::ZVersion;
 
-pub struct ZProcessor {
+pub struct ZProcessor<P>
+where
+    P: PC,
+{
     pub story_h: Handle<ZMemory>,
     pub header: ZHeader,
-    pub pc: PC,
+    pub pc: P,
     pub stack: ZStack,
 }
 
-impl ZProcessor {
-    pub fn new<T: Read>(rdr: &mut T) -> Result<ZProcessor> {
-        // TODO: error handling. get rid of unwraps.
-        let (story_h, header) = ZMemory::new(rdr)?;
-        // TODO: For V6, you will need to treat the start_pc as a PackedAddress.
-        let pc = PC::new(&story_h, header.start_pc(), header.version_number());
-        let stack = ZStack::new();
+pub fn new_processor_from_rdr<T: Read>(rdr: &mut T) -> Result<ZProcessor<ZPC>> {
+    // TODO: error handling. get rid of unwraps.
+    let (story_h, header) = ZMemory::new(rdr)?;
+    // TODO: For V6, you will need to treat the start_pc as a PackedAddress.
+    let pc = ZPC::new(&story_h, header.start_pc(), header.version_number());
+    let stack = ZStack::new();
 
-        Ok(ZProcessor {
-            story_h,
+    Ok(ZProcessor::new(story_h, header, pc, stack))
+}
+
+impl<P> ZProcessor<P>
+where
+    P: PC,
+{
+    pub fn new(memory_h: Handle<ZMemory>, header: ZHeader, pc: P, stack: ZStack) -> ZProcessor<P> {
+        ZProcessor {
+            story_h: memory_h,
             header,
             pc,
             stack,
-        })
+        }
     }
 
     pub fn run(&mut self) -> Result<()> {
@@ -138,7 +149,7 @@ impl ZProcessor {
         match opcode {
             0x0a => self.twoop_10_test_attr(operands),
             0x0d => self.twoop_13_store(operands),
-            0x14 => self.twoop_20_add(operands),
+            0x14 => opcode::two_op::o_20_add(&mut self.pc, &mut self, operands),
             _ => self.unimplemented("long", opcode),
         }
     }
@@ -163,12 +174,6 @@ impl ZProcessor {
         Ok(())
     }
 
-    fn twoop_20_add(&mut self, operands: [ZOperand; 2]) -> Result<()> {
-        let store = self.pc.next_byte();
-        println!("add         {} {} -> {}       XXX", operands[0], operands[1], store);
-        Ok(())
-    }
-
     fn noops_187_new_line(&mut self) -> Result<()> {
         println!("new_line                        XXX");
         Ok(())
@@ -185,9 +190,9 @@ impl ZProcessor {
         //    - leave space for locals
         let store = self.pc.next_byte();
 
-//        let next_pc = self.pc.current_pc();
-//        let pa = self.header.version_number().make_packed_address(val);
-        
+        //        let next_pc = self.pc.current_pc();
+        //        let pa = self.header.version_number().make_packed_address(val);
+
         println!(
             "call        {} {} {} {} -> {}      XXX",
             operands[0], operands[1], operands[2], operands[3], store

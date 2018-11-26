@@ -1,15 +1,8 @@
 use super::handle::Handle;
 use super::memory::ZMemory;
+use super::traits::PC;
 use super::version::ZVersion;
 
-// A ZOffset is an index into ZMemory.
-//
-// It can reference the entire core memory. It cannot be created directly,
-// but only from one of the addressing types: ByteAddress, WordAddress, or
-// PackedAddress.
-//
-// The PC is represented as a raw ZOffset, since none of the addressing modes
-// can access every byte in core memory.
 #[derive(Clone, Copy, Debug)]
 pub struct ZOffset(usize);
 
@@ -65,26 +58,22 @@ impl From<PackedAddress> for ZOffset {
     }
 }
 
-pub struct PC {
+pub struct ZPC {
     pc: usize,
     version: ZVersion,
     mem_h: Handle<ZMemory>,
 }
 
-impl PC {
-    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T, version: ZVersion) -> PC
+impl ZPC {
+    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T, version: ZVersion) -> ZPC
     where
         T: Into<ZOffset>,
     {
-        PC {
+        ZPC {
             pc: start_pc.into().0,
             version,
             mem_h: mem_h.clone(),
         }
-    }
-
-    pub fn current_pc(&self) -> usize {
-        self.pc
     }
 
     // pub fn inc(&mut self) {
@@ -98,23 +87,29 @@ impl PC {
     //         self.pc += increment as usize;
     //     }
     // }
+}
 
-    pub fn next_byte(&mut self) -> u8 {
+impl PC for ZPC {
+    fn current_pc(&self) -> usize {
+        self.pc
+    }
+
+    fn next_byte(&mut self) -> u8 {
         let offset = ZOffset(self.pc);
         let byte = self.mem_h.read_byte(offset);
         self.pc += 1;
         byte
     }
 
-    pub fn next_word(&mut self) -> u16 {
+    fn next_word(&mut self) -> u16 {
         let high_byte = self.next_byte();
         let low_byte = self.next_byte();
         (u16::from(high_byte) << 8) + u16::from(low_byte)
     }
 }
 
-impl From<PC> for ZOffset {
-    fn from(pc: PC) -> ZOffset {
+impl From<ZPC> for ZOffset {
+    fn from(pc: ZPC) -> ZOffset {
         ZOffset(pc.pc)
     }
 }
@@ -159,13 +154,13 @@ mod test {
 
     #[test]
     fn test_pc_new_vers() {
-        let pc3 = PC::new(
+        let pc3 = ZPC::new(
             &test_mem(ZVersion::V3),
             PackedAddress::new(0xccdd, ZVersion::V3),
             ZVersion::V3,
         );
         // TODO: do this.
-//        assert_eq!(0x199ba, pc3.pc);
+        //        assert_eq!(0x199ba, pc3.pc);
 
         // TODO: put this back in.
         //        let pc5 = PC::new(&test_mem(ZVersion::V3), PackedAddress(0xccdd), ZVersion::V5);
