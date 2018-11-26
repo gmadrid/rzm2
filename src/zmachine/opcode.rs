@@ -138,6 +138,7 @@ impl fmt::Display for ZVariable {
 pub mod zero_op {
     use super::*;
 
+    // ZSpec: 0OP:187 0x0B new_line
     pub fn o_187_new_line() -> Result<bool> {
         // TODO: This is not acceptible in a world with multiple output streams.
         println!("\n");
@@ -151,6 +152,7 @@ pub mod one_op {}
 pub mod two_op {
     use super::*;
 
+    // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
     pub fn o_10_test_attr<P>(pc: &mut P, operands: [ZOperand; 2]) -> Result<bool>
     where
         P: PC,
@@ -170,6 +172,7 @@ pub mod two_op {
         Ok(true)
     }
 
+    // ZSpec: 2OP:20 0x14 add a b -> (result)
     pub fn o_20_add<P>(pc: &mut P, operands: [ZOperand; 2]) -> Result<bool>
     where
         P: PC,
@@ -188,6 +191,7 @@ pub mod two_op {
 pub mod var_op {
     use super::*;
 
+    // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     pub fn o_224_call<P>(pc: &mut P, operands: [ZOperand; 4]) -> Result<bool>
     where
         P: PC,
@@ -212,11 +216,13 @@ pub mod var_op {
         Ok(true)
     }
 
+    // ZSpec: VAR:225 1 storew array word-index value
     pub fn o_225_storew(operands: [ZOperand; 4]) -> Result<bool> {
         debug!("XXX storew not done");
         Ok(true)
     }
 
+    // ZSpec: VAR:227 3 put_prop object property value
     pub fn o_227_put_prop(operands: [ZOperand; 4]) -> Result<bool> {
         debug!("XXX put_prop not done");
         Ok(true)
