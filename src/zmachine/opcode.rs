@@ -1,5 +1,7 @@
 use std::fmt;
 
+use log::debug;
+
 use super::result::Result;
 use super::traits::PC;
 
@@ -137,7 +139,9 @@ pub mod zero_op {
     use super::*;
 
     pub fn o_187_new_line() -> Result<bool> {
-        println!("new_line                        XXX");
+        // TODO: This is not acceptible in a world with multiple output streams.
+        println!("\n");
+        debug!("new_line                        XXX");
         Ok(true)
     }
 }
@@ -152,7 +156,7 @@ pub mod two_op {
         P: PC,
     {
         let branch = pc.next_byte();
-        println!(
+        debug!(
             "test_attr   {} {} ?{:b} XXX",
             operands[0], operands[1], branch
         );
@@ -162,7 +166,7 @@ pub mod two_op {
     pub fn o_13_store(operands: [ZOperand; 2]) -> Result<bool> {
         // 2OP:13 0x0D store (variable) value
         let variable = ZVariable::from(operands[0]);
-        println!("store       ({}) {}           XXX", variable, operands[1]);
+        debug!("store       ({}) {}           XXX", variable, operands[1]);
         Ok(true)
     }
 
@@ -172,7 +176,7 @@ pub mod two_op {
     {
         let store = pc.next_byte();
         let variable = ZVariable::from(store);
-        println!(
+        debug!(
             "add         {} {} -> {}       XXX",
             operands[0], operands[1], variable
         );
@@ -201,7 +205,7 @@ pub mod var_op {
         //        let next_pc = self.pc.current_pc();
         //        let pa = self.header.version_number().make_packed_address(val);
 
-        println!(
+        debug!(
             "call        {} {} {} {} -> {}      XXX",
             operands[0], operands[1], operands[2], operands[3], store
         );
@@ -209,12 +213,12 @@ pub mod var_op {
     }
 
     pub fn o_225_storew(operands: [ZOperand; 4]) -> Result<bool> {
-        println!("XXX storew not done");
+        debug!("XXX storew not done");
         Ok(true)
     }
 
     pub fn o_227_put_prop(operands: [ZOperand; 4]) -> Result<bool> {
-        println!("XXX put_prop not done");
+        debug!("XXX put_prop not done");
         Ok(true)
     }
 }

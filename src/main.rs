@@ -1,3 +1,6 @@
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 extern crate rzm2;
 
 use std::fs::File;
@@ -13,9 +16,11 @@ fn run() -> Result<()> {
 }
 
 fn main() {
+    env_logger::init();
+    
     match run() {
         Ok(_) => (),
         //        Err(ItoolsError::Clap(err)) => println!("{}", err.description()),
-        Err(e) => println!("Error: {:?}", e),
+        Err(e) => error!("Error: {:?}", e),
     }
 }
