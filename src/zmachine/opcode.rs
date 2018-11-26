@@ -20,9 +20,7 @@ impl fmt::Display for ZOperand {
         match *self {
             LargeConstant(c) => write!(f, "#{:04x}", c),
             SmallConstant(c) => write!(f, "#{:02x}", c),
-            Var(v) => {
-                write!(f, "{}", v)
-            },
+            Var(v) => write!(f, "{}", v),
             Omitted => write!(f, "_"),
         }
     }

@@ -175,7 +175,19 @@ impl ZProcessor {
     }
 
     fn var_224_call(&mut self, operands: [ZOperand; 4]) -> Result<()> {
+        // 1) Save away old PC. It is the return value.
+        // 2) Set PC to new value.
+        // 3) Read num vars/num locals from new location.
+        // 4) Push new frame onto stack.
+        //    - return Offset
+        //    - Old frame ptr
+        //    - locals init
+        //    - leave space for locals
         let store = self.pc.next_byte();
+
+//        let next_pc = self.pc.current_pc();
+//        let pa = self.header.version_number().make_packed_address(val);
+        
         println!(
             "call        {} {} {} {} -> {}      XXX",
             operands[0], operands[1], operands[2], operands[3], store

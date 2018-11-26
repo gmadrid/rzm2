@@ -1,3 +1,4 @@
+use super::addressing::PackedAddress;
 use super::result::{Result, ZErr};
 
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Eq)]
@@ -22,6 +23,10 @@ impl ZVersion {
             //            6 => Ok(V6),
             _ => Err(ZErr::UnknownVersionNumber(byte)),
         }
+    }
+
+    pub fn make_packed_address(&self, val: u16) -> PackedAddress {
+        PackedAddress::new(val, *self)
     }
 
     pub fn convert_file_length(&self, raw_length: u16) -> usize {
