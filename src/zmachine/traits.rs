@@ -1,6 +1,8 @@
 use super::opcode::ZVariable;
+use super::version::ZVersion;
 
-trait Header {
+pub trait Header {
+    fn version_number(&self) -> ZVersion;
 }
 
 pub trait PC {
@@ -9,12 +11,9 @@ pub trait PC {
     fn next_word(&mut self) -> u16;
 }
 
-trait Memory {
-}
+pub trait Memory {}
 
-trait Stack {
-
-}
+pub trait Stack {}
 
 pub trait Variables {
     fn read_variable(&self, var: &ZVariable) -> u16;

@@ -2,14 +2,15 @@ extern crate rzm2;
 
 use std::fs::File;
 
-use rzm2::{new_processor_from_rdr, Result, ZProcessor};
+use rzm2::Result;
 
 fn run() -> Result<()> {
     // TODO: add some cmd line args.
     // TODO: read a filename.
-    let mut rdr = File::open("Zork1.z3")?;
-    let mut machine = new_processor_from_rdr(&mut rdr)?;
-    machine.run()
+    let mut _rdr = File::open("Zork1.z3")?;
+    //    let mut machine = new_processor_from_rdr(&mut rdr)?;
+    //    machine.run()
+    Ok(())
 }
 
 fn main() {

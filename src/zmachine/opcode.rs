@@ -1,7 +1,70 @@
 use std::fmt;
 
 use super::result::Result;
-use super::traits::{Variables, PC};
+use super::traits::PC;
+
+// Each (non-extended) opcode indicates its type (Short, Long, Var) with the top two bits.
+pub const OPCODE_TYPE_MASK: u8 = 0b1100_0000;
+pub const SHORT_OPCODE_TYPE_MASK: u8 = 0b1000_0000;
+pub const VAR_OPCODE_TYPE_MASK: u8 = 0b1100_0000;
+
+// In V5+, this opcode byte indicates that the second byte is an extended opcode.
+pub const EXTENDED_OPCODE_SENTINEL: u8 = 0xbe;
+
+// This is the only way that I can find to use these values as both constants in a 'match'
+// and enum values.
+const LargeConstantTypeConst: u8 = 0b00;
+const SmallConstantTypeConst: u8 = 0b01;
+const VariableTypeConst: u8 = 0b10;
+const OmittedTypeConst: u8 = 0b11;
+
+#[derive(Clone, Copy, Debug)]
+pub enum ZOperandType {
+    LargeConstantType,
+    SmallConstantType,
+    VariableType,
+    OmittedType,
+}
+
+impl From<u8> for ZOperandType {
+    fn from(byte: u8) -> ZOperandType {
+        // from must never fail, so it ignores the top bits.
+        match byte & 0b11 {
+            LargeConstantTypeConst => ZOperandType::LargeConstantType,
+            SmallConstantTypeConst => ZOperandType::SmallConstantType,
+            VariableTypeConst => ZOperandType::VariableType,
+            OmittedTypeConst => ZOperandType::OmittedType,
+            _ => panic!("This can't happen?"),
+        }
+    }
+}
+
+impl ZOperand {
+    pub fn read_operand<P>(pc: &mut P, otype: ZOperandType) -> ZOperand
+    where
+        P: PC,
+    {
+        match otype {
+            ZOperandType::LargeConstantType => {
+                // Large constant
+                let lc = pc.next_word();
+                ZOperand::LargeConstant(lc)
+            }
+            ZOperandType::SmallConstantType => {
+                // Small constant
+                let sc = pc.next_byte();
+                ZOperand::SmallConstant(sc)
+            }
+            ZOperandType::VariableType => {
+                // Variable
+                let var = pc.next_byte();
+                ZOperand::Var(var.into())
+            }
+            // Omitted
+            ZOperandType::OmittedType => ZOperand::Omitted,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub enum ZOperand {
@@ -70,21 +133,88 @@ impl fmt::Display for ZVariable {
     }
 }
 
+pub mod zero_op {
+    use super::*;
+
+    pub fn o_187_new_line() -> Result<bool> {
+        println!("new_line                        XXX");
+        Ok(true)
+    }
+}
+
+pub mod one_op {}
+
 pub mod two_op {
     use super::*;
 
-    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
+    pub fn o_10_test_attr<P>(pc: &mut P, operands: [ZOperand; 2]) -> Result<bool>
     where
         P: PC,
-        V: Variables,
+    {
+        let branch = pc.next_byte();
+        println!(
+            "test_attr   {} {} ?{:b} XXX",
+            operands[0], operands[1], branch
+        );
+        Ok(true)
+    }
+
+    pub fn o_13_store(operands: [ZOperand; 2]) -> Result<bool> {
+        // 2OP:13 0x0D store (variable) value
+        let variable = ZVariable::from(operands[0]);
+        println!("store       ({}) {}           XXX", variable, operands[1]);
+        Ok(true)
+    }
+
+    pub fn o_20_add<P>(pc: &mut P, operands: [ZOperand; 2]) -> Result<bool>
+    where
+        P: PC,
     {
         let store = pc.next_byte();
-        let variable = ZVariable::from(u8::from(store));
+        let variable = ZVariable::from(store);
         println!(
             "add         {} {} -> {}       XXX",
             operands[0], operands[1], variable
         );
-        Ok(())
+        Ok(true)
     }
 
+}
+
+pub mod var_op {
+    use super::*;
+
+    pub fn o_224_call<P>(pc: &mut P, operands: [ZOperand; 4]) -> Result<bool>
+    where
+        P: PC,
+    {
+        // 1) Save away old PC. It is the return value.
+        // 2) Set PC to new value.
+        // 3) Read num vars/num locals from new location.
+        // 4) Push new frame onto stack.
+        //    - return Offset
+        //    - Old frame ptr
+        //    - locals init
+        //    - leave space for locals
+        let store = pc.next_byte();
+
+        //        let next_pc = self.pc.current_pc();
+        //        let pa = self.header.version_number().make_packed_address(val);
+
+        println!(
+            "call        {} {} {} {} -> {}      XXX",
+            operands[0], operands[1], operands[2], operands[3], store
+        );
+        Ok(true)
+    }
+
+    pub fn o_225_storew(operands: [ZOperand; 4]) -> Result<bool> {
+        println!("XXX storew not done");
+        Ok(true)
+    }
+
+    pub fn o_227_put_prop(operands: [ZOperand; 4]) -> Result<bool> {
+        println!("XXX put_prop not done");
+        Ok(true)
+    }
 }
