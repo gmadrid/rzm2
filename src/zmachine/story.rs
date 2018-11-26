@@ -1,13 +1,13 @@
-// use std::io::Read;
+use std::io::Read;
 
-// use super::addressing::ZPC;
-// use super::header::ZHeader;
-// use super::memory::ZMemory;
-// use super::processor::ZProcessor;
-// use super::result::Result;
-// use super::stack::ZStack;
+use super::addressing::ZPC;
+use super::header::ZHeader;
+use super::memory::ZMemory;
+use super::processor::ZProcessor;
+use super::result::Result;
+use super::stack::ZStack;
+use super::traits::{Header, Memory, Stack, PC};
 
-/*
 pub fn new_story_processor<T: Read>(
     rdr: &mut T,
 ) -> Result<ZProcessor<ZHeader, ZMemory, ZPC, ZStack>> {
@@ -18,4 +18,3 @@ pub fn new_story_processor<T: Read>(
 
     Ok(ZProcessor::new(story_h, header, pc, stack))
 }
-*/

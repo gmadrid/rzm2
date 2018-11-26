@@ -2,6 +2,7 @@ use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::memory::ZMemory;
 use super::result::Result;
+use super::traits::Header;
 use super::version::ZVersion;
 
 // Offsets for fields in the header.
@@ -30,10 +31,6 @@ impl ZHeader {
         })
     }
 
-    pub fn version_number(&self) -> ZVersion {
-        self.z_version
-    }
-
     pub fn start_pc(&self) -> ByteAddress {
         let raw_value = self.memory.read_word(ByteAddress::from_raw(OS_START_PC));
         ByteAddress::from_raw(raw_value)
@@ -42,6 +39,12 @@ impl ZHeader {
     pub fn file_length(&self) -> usize {
         let raw_file_length = self.memory.read_word(ByteAddress::from_raw(OS_FILE_LEN));
         self.z_version.convert_file_length(raw_file_length)
+    }
+}
+
+impl Header for ZHeader {
+    fn version_number(&self) -> ZVersion {
+        self.z_version
     }
 }
 

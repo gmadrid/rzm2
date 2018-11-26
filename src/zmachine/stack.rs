@@ -1,4 +1,5 @@
 use super::constants;
+use super::traits::Stack;
 
 // Stack size maxes out at 1024.
 //
@@ -53,3 +54,5 @@ impl ZStack {
         self.push_word((addr >> 0 & 0xffff) as u16);
     }
 }
+
+impl Stack for ZStack {}

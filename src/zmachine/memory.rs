@@ -4,6 +4,7 @@ use super::addressing::ZOffset;
 use super::handle::{new_handle, Handle};
 use super::header::ZHeader;
 use super::result::Result;
+use super::traits::Memory;
 
 // The "core memory" of the ZMachine. A memory-mapped story file.
 //
@@ -70,6 +71,8 @@ impl ZMemory {
         (u16::from(high_byte) << 8) + u16::from(low_byte)
     }
 }
+
+impl Memory for ZMemory {}
 
 #[cfg(test)]
 mod test {

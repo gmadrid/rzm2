@@ -13,4 +13,4 @@ mod version;
 
 pub use self::processor::ZProcessor;
 pub use self::result::Result;
-//pub use self::story::new_story_processor;
+pub use self::story::new_story_processor;

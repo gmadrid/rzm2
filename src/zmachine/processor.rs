@@ -1,3 +1,6 @@
+use std::rc::Rc;
+
+use super::handle::Handle;
 use super::opcode::{
     self, ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
     SHORT_OPCODE_TYPE_MASK, VAR_OPCODE_TYPE_MASK,
@@ -13,7 +16,7 @@ where
     P: PC,
     S: Stack,
 {
-    pub memory: M,
+    pub memory: Handle<M>,
     pub header: H,
     pub pc: P,
     pub stack: S,
@@ -26,7 +29,7 @@ where
     P: PC,
     S: Stack,
 {
-    pub fn new(memory: M, header: H, pc: P, stack: S) -> ZProcessor<H, M, P, S> {
+    pub fn new(memory: Handle<M>, header: H, pc: P, stack: S) -> ZProcessor<H, M, P, S> {
         ZProcessor {
             memory,
             header,
