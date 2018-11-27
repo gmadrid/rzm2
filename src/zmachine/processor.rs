@@ -1,6 +1,7 @@
 use super::handle::Handle;
 use super::opcode::{
-    two_op, var_op, zero_op, ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
+    two_op, var_op, zero_op};
+use super::opcode::{ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
     SHORT_OPCODE_TYPE_MASK, VAR_OPCODE_TYPE_MASK,
 };
 use super::result::Result;
