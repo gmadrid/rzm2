@@ -112,6 +112,16 @@ impl From<u8> for ZVariable {
     }
 }
 
+impl From<ZVariable> for u8 {
+    fn from(var: ZVariable) -> u8 {
+        match var {
+            ZVariable::Stack => 0x00,
+            ZVariable::Local(l) => l + 0x01,
+            ZVariable::Global(g) => g + 0x10,
+        }
+    }
+}
+
 // This is mainly for "indirect" operands.
 // panic! if value is out of range.
 impl From<ZOperand> for ZVariable {
