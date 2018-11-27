@@ -96,7 +96,7 @@ impl PC for ZPC {
 
     fn next_byte(&mut self) -> u8 {
         let offset = ZOffset(self.pc);
-        let byte = self.mem_h.read_byte(offset);
+        let byte = self.mem_h.borrow().read_byte(offset);
         self.pc += 1;
         byte
     }
