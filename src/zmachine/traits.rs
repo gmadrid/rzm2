@@ -35,7 +35,20 @@ pub trait Memory {
 }
 
 pub trait Stack {
-    fn pop_word(&mut self) -> u16;
+    fn push_byte(&mut self, val: u8);
+    fn pop_byte(&mut self) -> u8;
+
+    fn push_word(&mut self, word: u16) {
+        self.push_byte((word >> 8 & 0xff) as u8);
+        self.push_byte((word >> 0 & 0xff) as u8);
+    }
+
+    fn pop_word(&mut self) -> u16 {
+        let low_byte = u16::from(self.pop_byte());
+        let high_byte = u16::from(self.pop_byte());
+
+        (high_byte << 8) + low_byte
+    }
 }
 
 pub trait Variables {

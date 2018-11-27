@@ -101,16 +101,6 @@ impl ZStack {
         self.s0 = self.sp;
     }
 
-    fn push_byte(&mut self, byte: u8) {
-        self.stack[self.sp] = byte;
-        self.sp += 1;
-    }
-
-    fn push_word(&mut self, word: u16) {
-        self.push_byte((word >> 8 & 0xff) as u8);
-        self.push_byte((word >> 0 & 0xff) as u8);
-    }
-
     fn push_addr(&mut self, addr: usize) {
         // This should probably be a ZOffset.
         self.push_word((addr >> 16 & 0xffff) as u16);
@@ -123,8 +113,14 @@ impl ZStack {
 }
 
 impl Stack for ZStack {
-    fn pop_word(&mut self) -> u16 {
-        panic!("UNIMPLEMENTED");
+    fn push_byte(&mut self, byte: u8) {
+        self.stack[self.sp] = byte;
+        self.sp += 1;
+    }
+
+    fn pop_byte(&mut self) -> u8 {
+        self.sp -= 1;
+        self.stack[self.sp]
     }
 }
 
