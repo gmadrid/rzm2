@@ -23,7 +23,8 @@ pub struct ZHeader {
 
 impl ZHeader {
     pub fn new(memory: &Handle<ZMemory>) -> Result<ZHeader> {
-        let z_version = ZVersion::new(memory.read_byte(ByteAddress::from_raw(OS_VERSION)))?;
+        let z_version =
+            ZVersion::new(memory.borrow().read_byte(ByteAddress::from_raw(OS_VERSION)))?;
 
         Ok(ZHeader {
             memory: memory.clone(),
@@ -32,12 +33,18 @@ impl ZHeader {
     }
 
     pub fn start_pc(&self) -> ByteAddress {
-        let raw_value = self.memory.read_word(ByteAddress::from_raw(OS_START_PC));
+        let raw_value = self
+            .memory
+            .borrow()
+            .read_word(ByteAddress::from_raw(OS_START_PC));
         ByteAddress::from_raw(raw_value)
     }
 
     pub fn file_length(&self) -> usize {
-        let raw_file_length = self.memory.read_word(ByteAddress::from_raw(OS_FILE_LEN));
+        let raw_file_length = self
+            .memory
+            .borrow()
+            .read_word(ByteAddress::from_raw(OS_FILE_LEN));
         self.z_version.convert_file_length(raw_file_length)
     }
 }

@@ -7,6 +7,10 @@ use super::version::ZVersion;
 pub struct ZOffset(usize);
 
 impl ZOffset {
+    pub fn inc_by(self, by: usize) -> ZOffset {
+        ZOffset(self.0 + by)
+    }
+
     pub fn value(self) -> usize {
         self.0
     }
@@ -18,6 +22,10 @@ pub struct ByteAddress(u16);
 impl ByteAddress {
     pub fn from_raw(word: u16) -> ByteAddress {
         ByteAddress(word)
+    }
+
+    pub fn inc_by(self, by: u16) -> ByteAddress {
+        ByteAddress(self.0 + by)
     }
 }
 
@@ -96,15 +104,9 @@ impl PC for ZPC {
 
     fn next_byte(&mut self) -> u8 {
         let offset = ZOffset(self.pc);
-        let byte = self.mem_h.read_byte(offset);
+        let byte = self.mem_h.borrow().read_byte(offset);
         self.pc += 1;
         byte
-    }
-
-    fn next_word(&mut self) -> u16 {
-        let high_byte = self.next_byte();
-        let low_byte = self.next_byte();
-        (u16::from(high_byte) << 8) + u16::from(low_byte)
     }
 }
 

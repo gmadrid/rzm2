@@ -6,7 +6,7 @@ use super::memory::ZMemory;
 use super::processor::ZProcessor;
 use super::result::Result;
 use super::stack::ZStack;
-use super::traits::{Header, Memory, Stack, PC};
+use super::traits::Header;
 
 pub fn new_story_processor<T: Read>(
     rdr: &mut T,

@@ -9,7 +9,11 @@ mod result;
 mod stack;
 mod story;
 mod traits;
+mod variables;
 mod version;
+
+#[cfg(test)]
+mod fixtures;
 
 pub use self::processor::ZProcessor;
 pub use self::result::Result;

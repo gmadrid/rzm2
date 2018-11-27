@@ -72,7 +72,14 @@ impl ZMemory {
     }
 }
 
-impl Memory for ZMemory {}
+impl Memory for ZMemory {
+    fn set_byte<T>(&mut self, at: T, val: u8)
+    where
+        T: Into<ZOffset>,
+    {
+        self.bytes[at.into().value()] = val;
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -101,20 +108,20 @@ mod test {
         // - header consistency
 
         // We read the entire array.
-        assert_eq!(sample_bytes().len(), zmem.memory_size());
+        assert_eq!(sample_bytes().len(), zmem.borrow().memory_size());
     }
 
     #[test]
     fn test_byte_address() {
         let zmem = test_mem(ZVersion::V3);
 
-        assert_eq!(3, zmem.read_byte(ByteAddress::from_raw(0)));
-        assert_eq!(8, zmem.read_byte(ByteAddress::from_raw(5)));
+        assert_eq!(3, zmem.borrow().read_byte(ByteAddress::from_raw(0)));
+        assert_eq!(8, zmem.borrow().read_byte(ByteAddress::from_raw(5)));
 
-        assert_eq!(0x0304, zmem.read_word(ByteAddress::from_raw(0)));
-        assert_eq!(0xccdd, zmem.read_word(ByteAddress::from_raw(0x0a)));
+        assert_eq!(0x0304, zmem.borrow().read_word(ByteAddress::from_raw(0)));
+        assert_eq!(0xccdd, zmem.borrow().read_word(ByteAddress::from_raw(0x0a)));
 
         // Read a word from a non-word-aligned location.
-        assert_eq!(0x09cc, zmem.read_word(ByteAddress::from_raw(0x09)));
+        assert_eq!(0x09cc, zmem.borrow().read_word(ByteAddress::from_raw(0x09)));
     }
 }
