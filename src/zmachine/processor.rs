@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use super::handle::Handle;
 use super::opcode::{
     self, ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
@@ -7,6 +5,7 @@ use super::opcode::{
 };
 use super::result::Result;
 use super::traits::{Header, Memory, Stack, /* Variables, */ PC};
+use super::variables::ZVariables;
 use super::version::ZVersion;
 
 pub struct ZProcessor<H, M, P, S>
@@ -130,10 +129,11 @@ where
             ZOperand::read_operand(&mut self.pc, ZOperandType::VariableType)
         };
 
+        let mut variables = ZVariables {};
         match opcode {
             0x0a => opcode::two_op::o_10_test_attr(&mut self.pc, operands),
             0x0d => opcode::two_op::o_13_store(operands),
-            0x14 => opcode::two_op::o_20_add(&mut self.pc, operands),
+            0x14 => opcode::two_op::o_20_add(&mut self.pc, &mut variables, operands),
             _ => self.unimplemented("long", opcode),
         }
     }

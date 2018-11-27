@@ -100,12 +100,6 @@ impl PC for ZPC {
         self.pc += 1;
         byte
     }
-
-    fn next_word(&mut self) -> u16 {
-        let high_byte = self.next_byte();
-        let low_byte = self.next_byte();
-        (u16::from(high_byte) << 8) + u16::from(low_byte)
-    }
 }
 
 impl From<ZPC> for ZOffset {
