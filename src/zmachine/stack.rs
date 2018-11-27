@@ -102,13 +102,11 @@ impl ZStack {
     }
 
     fn push_byte(&mut self, byte: u8) {
-        println!("PUSHING: {:x}", byte);
         self.stack[self.sp] = byte;
         self.sp += 1;
     }
 
     fn push_word(&mut self, word: u16) {
-        println!(" PUSH WORD: {:x}", word);
         self.push_byte((word >> 8 & 0xff) as u8);
         self.push_byte((word >> 0 & 0xff) as u8);
     }
