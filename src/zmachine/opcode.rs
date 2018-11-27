@@ -272,7 +272,7 @@ mod test {
         let mut variables = TestVariables::new();
         let operands: [ZOperand; 2] = [ZOperand::SmallConstant(3), ZOperand::LargeConstant(98)];
 
-        two_op::o_20_add(&mut pc, &mut variables, operands).unwrap();
+        two_op::o_20_add(&mut pc, &mut variables, operands);
 
         // Ensure that the pc advanced one byte.
         assert_eq!(9, pc.current_pc());
@@ -290,7 +290,7 @@ mod test {
         let mut variables = TestVariables::new();
         let operands: [ZOperand; 2] = [ZOperand::LargeConstant(65530), ZOperand::SmallConstant(98)];
 
-        two_op::o_20_add(&mut pc, &mut variables, operands).unwrap();
+        two_op::o_20_add(&mut pc, &mut variables, operands);
 
         // Ensure that the pc advanced one byte.
         assert_eq!(9, pc.current_pc());
