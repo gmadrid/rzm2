@@ -72,7 +72,14 @@ impl ZMemory {
     }
 }
 
-impl Memory for ZMemory {}
+impl Memory for ZMemory {
+    fn set_byte<T>(&mut self, at: T, val: u8)
+    where
+        T: Into<ZOffset>,
+    {
+        self.bytes[at.into().value()] = val;
+    }
+}
 
 #[cfg(test)]
 mod test {

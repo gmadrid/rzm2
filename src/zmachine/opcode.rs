@@ -2,7 +2,9 @@ use std::fmt;
 
 use log::{debug, warn};
 
-use super::traits::{Variables, PC};
+use super::addressing::ByteAddress;
+use super::handle::Handle;
+use super::traits::{Memory, Variables, PC};
 
 // Each (non-extended) opcode indicates its type (Short, Long, Var) with the top two bits.
 pub const OPCODE_TYPE_MASK: u8 = 0b1100_0000;
@@ -81,7 +83,7 @@ impl ZOperand {
         match *self {
             ZOperand::LargeConstant(val) => val,
             ZOperand::SmallConstant(val) => u16::from(val),
-            ZOperand::Var(var) => variables.read_variable(&var),
+            ZOperand::Var(var) => variables.read_variable(var),
             ZOperand::Omitted => panic!("Cannot load value from an Omitted operand."),
         }
     }
@@ -177,10 +179,15 @@ pub mod two_op {
     }
 
     // ZSpec: 2OP:13 0x0D store (variable) value
-    // UNTESTED
-    pub fn o_13_store(operands: [ZOperand; 2]) {
+    pub fn o_13_store<V>(variables: &mut V, operands: [ZOperand; 2])
+    where
+        V: Variables,
+    {
         let variable = ZVariable::from(operands[0]);
         debug!("store       {} {}             XXX", variable, operands[1]);
+
+        let value = operands[1].value(variables);
+        variables.write_variable(variable, value);
     }
 
     // ZSpec: 2OP:20 0x14 add a b -> (result)
@@ -204,7 +211,7 @@ pub mod two_op {
             warn!("add {} + {} causes overflow.", lhs, rhs);
         }
 
-        variables.write_variable(&variable, result);
+        variables.write_variable(variable, result);
     }
 
 }
@@ -237,16 +244,26 @@ pub mod var_op {
         );
     }
 
-    // ZSpec: VAR:225 1 storew array word-index value
-    // UNTESTED
-    pub fn o_225_storew(operands: [ZOperand; 4]) {
+    // ZSpec: VAR:225 0x01 storew array word-index value
+    pub fn o_225_storew<M, V>(mem_h: &Handle<M>, variables: &mut V, operands: [ZOperand; 4])
+    where
+        M: Memory,
+        V: Variables,
+    {
         debug!(
             "storew     {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
+
+        let array = operands[0].value(variables);
+        let word_index = operands[1].value(variables);
+        let value = operands[2].value(variables);
+
+        let ba = ByteAddress::from_raw(array).inc_by(2 * word_index);
+        mem_h.borrow_mut().set_word(ba, value);
     }
 
-    // ZSpec: VAR:227 3 put_prop object property value
+    // ZSpec: VAR:227 0x03 put_prop object property value
     // UNTESTED
     pub fn o_227_put_prop(operands: [ZOperand; 4]) {
         debug!(
@@ -259,6 +276,7 @@ pub mod var_op {
 #[cfg(test)]
 mod test {
     use super::super::fixtures::*;
+    use super::super::handle::new_handle;
     use super::*;
 
     #[test]
@@ -295,5 +313,34 @@ mod test {
         // Ensure that the pc advanced one byte.
         assert_eq!(9, pc.current_pc());
         assert_eq!(92, variables.variables[&ZVariable::Stack]);
+    }
+
+    #[test]
+    fn test_store() {
+        let mut variables = TestVariables::new();
+        let operands: [ZOperand; 2] = [
+            ZOperand::SmallConstant(0), // Stack
+            ZOperand::LargeConstant(45),
+        ];
+        two_op::o_13_store(&mut variables, operands);
+
+        assert_eq!(45, variables.variables[&ZVariable::Stack]);
+    }
+
+    #[test]
+    fn test_storew() {
+        let mut variables = TestVariables::new();
+        let mut mem_h = new_handle(TestMemory::new(1000));
+        let operands: [ZOperand; 4] = [
+            ZOperand::SmallConstant(234),
+            ZOperand::SmallConstant(5),
+            ZOperand::LargeConstant(0xabcd),
+            ZOperand::Omitted,
+        ];
+
+        var_op::o_225_storew(&mem_h, &mut variables, operands);
+
+        assert_eq!(0xab, mem_h.borrow().bytes[244]);
+        assert_eq!(0xcd, mem_h.borrow().bytes[245]);
     }
 }

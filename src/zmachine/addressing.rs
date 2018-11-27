@@ -7,6 +7,10 @@ use super::version::ZVersion;
 pub struct ZOffset(usize);
 
 impl ZOffset {
+    pub fn inc_by(self, by: usize) -> ZOffset {
+        ZOffset(self.0 + by)
+    }
+
     pub fn value(self) -> usize {
         self.0
     }
@@ -18,6 +22,10 @@ pub struct ByteAddress(u16);
 impl ByteAddress {
     pub fn from_raw(word: u16) -> ByteAddress {
         ByteAddress(word)
+    }
+
+    pub fn inc_by(self, by: u16) -> ByteAddress {
+        ByteAddress(self.0 + by)
     }
 }
 
