@@ -1,6 +1,6 @@
 use super::handle::Handle;
 use super::opcode::{
-    self, ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
+    two_op, var_op, zero_op, ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK,
     SHORT_OPCODE_TYPE_MASK, VAR_OPCODE_TYPE_MASK,
 };
 use super::result::Result;
@@ -74,7 +74,7 @@ where
 
         if let ZOperand::Omitted = operand {
             match opcode {
-                11 => super::opcode::zero_op::o_187_new_line(),
+                11 => call_null(zero_op::o_187_new_line()),
                 _ => self.unimplemented("0op", opcode),
             }
         } else {
@@ -102,9 +102,9 @@ where
         }
 
         match opcode {
-            0 => super::opcode::var_op::o_224_call(&mut self.pc, operands),
-            1 => super::opcode::var_op::o_225_storew(operands),
-            3 => super::opcode::var_op::o_227_put_prop(operands),
+            0 => call_null(var_op::o_224_call(&mut self.pc, operands)),
+            1 => call_null(var_op::o_225_storew(operands)),
+            3 => call_null(var_op::o_227_put_prop(operands)),
             _ => panic!("Unimplemented var opcode: {}", opcode),
         }
     }
@@ -131,9 +131,9 @@ where
 
         let mut variables = ZVariables {};
         match opcode {
-            0x0a => opcode::two_op::o_10_test_attr(&mut self.pc, operands),
-            0x0d => opcode::two_op::o_13_store(operands),
-            0x14 => opcode::two_op::o_20_add(&mut self.pc, &mut variables, operands),
+            0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
+            0x0d => call_null(two_op::o_13_store(operands)),
+            0x14 => call_null(two_op::o_20_add(&mut self.pc, &mut variables, operands)),
             _ => self.unimplemented("long", opcode),
         }
     }
@@ -141,6 +141,10 @@ where
     fn unimplemented(&self, msg: &str, byte: u8) -> Result<bool> {
         panic!("Unimplemented {} opcode: {}", msg, byte);
     }
+}
+
+fn call_null(_n: ()) -> Result<bool> {
+    Ok(true)
 }
 
 #[cfg(test)]

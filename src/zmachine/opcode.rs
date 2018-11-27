@@ -2,8 +2,7 @@ use std::fmt;
 
 use log::{debug, warn};
 
-use super::result::Result;
-use super::traits::{Memory, Variables, PC};
+use super::traits::{Variables, PC};
 
 // Each (non-extended) opcode indicates its type (Short, Long, Var) with the top two bits.
 pub const OPCODE_TYPE_MASK: u8 = 0b1100_0000;
@@ -152,11 +151,10 @@ pub mod zero_op {
 
     // ZSpec: 0OP:187 0x0B new_line
     // UNTESTED
-    pub fn o_187_new_line() -> Result<bool> {
+    pub fn o_187_new_line() {
         // TODO: This is not acceptible in a world with multiple output streams.
         println!("\n");
         debug!("new_line                        XXX");
-        Ok(true)
     }
 }
 
@@ -167,7 +165,7 @@ pub mod two_op {
 
     // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
     // UNTESTED
-    pub fn o_10_test_attr<P>(pc: &mut P, operands: [ZOperand; 2]) -> Result<bool>
+    pub fn o_10_test_attr<P>(pc: &mut P, operands: [ZOperand; 2])
     where
         P: PC,
     {
@@ -176,19 +174,17 @@ pub mod two_op {
             "test_attr   {} {} ?{:b} XXX",
             operands[0], operands[1], branch
         );
-        Ok(true)
     }
 
     // ZSpec: 2OP:13 0x0D store (variable) value
     // UNTESTED
-    pub fn o_13_store(operands: [ZOperand; 2]) -> Result<bool> {
+    pub fn o_13_store(operands: [ZOperand; 2]) {
         let variable = ZVariable::from(operands[0]);
         debug!("store       {} {}             XXX", variable, operands[1]);
-        Ok(true)
     }
 
     // ZSpec: 2OP:20 0x14 add a b -> (result)
-    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<bool>
+    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
     where
         P: PC,
         V: Variables,
@@ -209,8 +205,6 @@ pub mod two_op {
         }
 
         variables.write_variable(&variable, result);
-
-        Ok(true)
     }
 
 }
@@ -220,7 +214,7 @@ pub mod var_op {
 
     // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     // UNTESTED
-    pub fn o_224_call<P>(pc: &mut P, operands: [ZOperand; 4]) -> Result<bool>
+    pub fn o_224_call<P>(pc: &mut P, operands: [ZOperand; 4])
     where
         P: PC,
     {
@@ -241,27 +235,24 @@ pub mod var_op {
             "call        {} {} {} {} -> {}      XXX",
             operands[0], operands[1], operands[2], operands[3], store
         );
-        Ok(true)
     }
 
     // ZSpec: VAR:225 1 storew array word-index value
     // UNTESTED
-    pub fn o_225_storew(operands: [ZOperand; 4]) -> Result<bool> {
+    pub fn o_225_storew(operands: [ZOperand; 4]) {
         debug!(
             "storew     {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
-        Ok(true)
     }
 
     // ZSpec: VAR:227 3 put_prop object property value
     // UNTESTED
-    pub fn o_227_put_prop(operands: [ZOperand; 4]) -> Result<bool> {
+    pub fn o_227_put_prop(operands: [ZOperand; 4]) {
         debug!(
             "put_prop   {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
-        Ok(true)
     }
 }
 
