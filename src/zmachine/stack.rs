@@ -122,7 +122,11 @@ impl ZStack {
     }
 }
 
-impl Stack for ZStack {}
+impl Stack for ZStack {
+    fn pop_word(&mut self) -> u16 {
+        panic!("UNIMPLEMENTED");
+    }
+}
 
 #[cfg(test)]
 mod test {
