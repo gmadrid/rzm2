@@ -234,18 +234,10 @@ pub mod var_op {
 
     // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     // UNTESTED
-    pub fn o_224_call<P>(pc: &mut P, operands: [ZOperand; 4])
+    pub fn o_224_call<P, S>(pc: &mut P, stack: &Handle<S>, operands: [ZOperand; 4])
     where
         P: PC,
     {
-        // 1) Save away old PC. It is the return value.
-        // 2) Set PC to new value.
-        // 3) Read num vars/num locals from new location.
-        // 4) Push new frame onto stack.
-        //    - return Offset
-        //    - Old frame ptr
-        //    - locals init
-        //    - leave space for locals
         let store = pc.next_byte();
 
         //        let next_pc = self.pc.current_pc();

@@ -11,7 +11,6 @@ pub const OS_START_PC: u16 = 0x06;
 pub const OS_GLOBAL_LOCATION: u16 = 0x0c;
 pub const OS_FILE_LEN: u16 = 0x1a;
 
-
 // Read a Story's Header information.
 // See ZSpec 11.
 pub struct ZHeader {
@@ -57,7 +56,10 @@ impl Header for ZHeader {
     }
 
     fn global_location(&self) -> ByteAddress {
-        let raw_value = self.memory.borrow().read_word(ByteAddress::from_raw(OS_GLOBAL_LOCATION));
+        let raw_value = self
+            .memory
+            .borrow()
+            .read_word(ByteAddress::from_raw(OS_GLOBAL_LOCATION));
         ByteAddress::from_raw(raw_value)
     }
 }

@@ -29,6 +29,16 @@ pub mod bytes {
         byte_to_slice(slice, idx, high_byte);
         byte_to_slice(slice, idx + 1, low_byte);
     }
+
+    pub fn long_word_from_slice(slice: &[u8], idx: usize) -> u32 {
+        // big-endian
+        let byte_3 = u32::from(byte_from_slice(slice, idx));
+        let byte_2 = u32::from(byte_from_slice(slice, idx + 1));
+        let byte_1 = u32::from(byte_from_slice(slice, idx + 2));
+        let byte_0 = u32::from(byte_from_slice(slice, idx + 3));
+
+        (byte_3 << 24) + (byte_2 << 16) + (byte_1 << 8) + byte_0
+    }
 }
 
 pub trait Header {

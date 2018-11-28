@@ -1,15 +1,6 @@
 use super::constants;
 use super::opcode::ZVariable;
-use super::traits::Stack;
-
-// Stack size maxes out at 1024.
-//
-// Stack frame:
-//   frame ptr (u16)    - index in the stack of the previous frame
-//   return PC (usize)  - pc of continuation after this call returns
-//   num_locals (u8)    - number of words for local variables (and call params)
-//   N * local
-//   eval stack
+use super::traits::{bytes, Stack};
 
 pub struct ZStack {
     stack: [u8; constants::STACK_SIZE],
@@ -35,6 +26,12 @@ pub struct ZStack {
 //       only storing 24 bits of the return_pc. (No legal story will overflow 24-bits.)
 //
 impl ZStack {
+    const SAVED_PC_OFFSET: usize = 0;
+    const RETURN_PC_OFFSET: usize = 2;
+    const RETURN_VAR_OFFSET: usize = 6;
+    const NUM_LOCALS_OFFSET: usize = 7;
+    const LOCAL_VAR_OFFSET: usize = 8;
+
     pub fn new() -> ZStack {
         let mut zs = ZStack {
             stack: [0; constants::STACK_SIZE],
@@ -61,11 +58,30 @@ impl ZStack {
         zs
     }
 
+    pub fn saved_fp(&self) -> usize {
+        usize::from(bytes::word_from_slice(
+            &self.stack,
+            self.fp + ZStack::SAVED_PC_OFFSET,
+        ))
+    }
+
+    pub fn return_pc(&self) -> usize {
+        bytes::long_word_from_slice(&self.stack, self.fp + ZStack::RETURN_PC_OFFSET) as usize
+    }
+
+    pub fn return_variable(&self) -> ZVariable {
+        bytes::byte_from_slice(&self.stack, self.fp + ZStack::RETURN_VAR_OFFSET).into()
+    }
+
+    pub fn num_locals(&self) -> u8 {
+        bytes::byte_from_slice(&self.stack, self.fp + ZStack::NUM_LOCALS_OFFSET).into()
+    }
+
     pub fn push_frame(
         &mut self,
         return_pc: usize,
         num_locals: u8,
-        return_var: &ZVariable,
+        return_var: ZVariable,
         operands: &[u16],
     ) {
         // Steps:
@@ -84,7 +100,7 @@ impl ZStack {
         self.fp = new_fp;
         self.push_addr(return_pc);
         // TODO: figure out that AsRef thing here.
-        self.push_byte(u8::from(*return_var));
+        self.push_byte(u8::from(return_var));
         self.push_byte(num_locals);
         for _ in 0..num_locals {
             self.push_word(0);
@@ -95,20 +111,32 @@ impl ZStack {
                 // TODO: probably want a warning here.
                 break;
             }
-            self.set_local(idx, *op);
+            self.write_local(idx as u8, *op);
         }
 
         self.s0 = self.sp;
+    }
+
+    pub fn pop_frame(&mut self) {
+        // Steps:
+        // - Remember current fp (call it old_fp).
+        // - Set fp to value from frame.
+        // - Set sp to old_fp.
+        // - Compute new value of s0.
+        let old_fp = self.fp;
+        self.sp = old_fp;
+        let saved_fp = self.saved_fp();
+        println!("saved fp: {}", saved_fp);
+        self.fp = saved_fp;
+        // TODO: make sure you haven't underflowed.
+
+        // What is s0 right now?
     }
 
     fn push_addr(&mut self, addr: usize) {
         // This should probably be a ZOffset.
         self.push_word((addr >> 16 & 0xffff) as u16);
         self.push_word((addr >> 0 & 0xffff) as u16);
-    }
-
-    fn set_local(&mut self, idx: usize, val: u16) {
-        panic!("UNIMPLEMENTED");
     }
 }
 
@@ -124,11 +152,18 @@ impl Stack for ZStack {
     }
 
     fn read_local(&self, l: u8) -> u16 {
-        panic!("unimplemented")
+        bytes::word_from_slice(
+            &self.stack,
+            self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
+        )
     }
 
     fn write_local(&mut self, l: u8, val: u16) {
-        panic!("unimplemented")
+        bytes::word_to_slice(
+            &mut self.stack,
+            self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
+            val,
+        );
     }
 }
 
@@ -164,4 +199,83 @@ mod test {
         // and there are no locals
         assert_eq!(0, bytes[7]);
     }
+
+    #[test]
+    fn test_push_frame() {
+        let mut stack = ZStack::new();
+
+        stack.push_frame(0xbabef00d, 5, ZVariable::Global(3), &[34, 38]);
+
+        assert_eq!(0xbabef00d, stack.return_pc());
+        assert_eq!(ZVariable::Global(3), stack.return_variable());
+        assert_eq!(5, stack.num_locals());
+        assert_eq!(34, stack.read_local(0));
+        assert_eq!(38, stack.read_local(1));
+        assert_eq!(0, stack.read_local(2));
+        assert_eq!(0, stack.read_local(3));
+        assert_eq!(0, stack.read_local(4));
+        // TODO: add a test here for reading off the end of the variables list.
+    }
+
+    #[test]
+    fn test_push_and_pop_frame() {
+        let mut stack = ZStack::new();
+
+        stack.push_frame(0xbabef00d, 5, ZVariable::Global(3), &[34, 38]);
+        stack.push_frame(0x12345678, 7, ZVariable::Local(5), &[1, 3, 5]);
+
+        assert_eq!(0x12345678, stack.return_pc());
+        assert_eq!(ZVariable::Local(5), stack.return_variable());
+        assert_eq!(7, stack.num_locals());
+        assert_eq!(1, stack.read_local(0));
+        assert_eq!(3, stack.read_local(1));
+        assert_eq!(5, stack.read_local(2));
+        assert_eq!(0, stack.read_local(3));
+        assert_eq!(0, stack.read_local(4));
+        assert_eq!(0, stack.read_local(5));
+        assert_eq!(0, stack.read_local(6));
+
+        stack.pop_frame();
+
+        assert_eq!(0xbabef00d, stack.return_pc());
+        assert_eq!(ZVariable::Global(3), stack.return_variable());
+        assert_eq!(5, stack.num_locals());
+        assert_eq!(34, stack.read_local(0));
+        assert_eq!(38, stack.read_local(1));
+        assert_eq!(0, stack.read_local(2));
+        assert_eq!(0, stack.read_local(3));
+        assert_eq!(0, stack.read_local(4));
+    }
+
+    #[test]
+    fn test_push_pop_stack_values() {
+        let mut stack = ZStack::new();
+
+        stack.push_frame(0xbabef00d, 5, ZVariable::Global(3), &[34, 38]);
+        stack.push_word(34);
+        stack.push_word(4832);
+        stack.push_word(137);
+
+        stack.push_frame(0x12345678, 7, ZVariable::Local(5), &[1, 3, 5]);
+        stack.push_word(99);
+        stack.push_word(1293);
+        stack.push_word(44444);
+        stack.push_word(253);
+
+        assert_eq!(253, stack.pop_word());
+        assert_eq!(44444, stack.pop_word());
+        assert_eq!(1293, stack.pop_word());
+        assert_eq!(99, stack.pop_word());
+
+        // TODO: test for underflow
+
+        stack.pop_frame();
+
+        assert_eq!(137, stack.pop_word());
+        assert_eq!(4832, stack.pop_word());
+        assert_eq!(34, stack.pop_word());
+    }
+
+    // TODO: add a test for having more operands than locals.
+
 }
