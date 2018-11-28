@@ -127,7 +127,7 @@ impl Stack for ZStack {
         panic!("unimplemented")
     }
 
-    fn write_local(&self, l: u8, val: u16) {
+    fn write_local(&mut self, l: u8, val: u16) {
         panic!("unimplemented")
     }
 }

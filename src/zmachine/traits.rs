@@ -1,4 +1,4 @@
-use super::addressing::ZOffset;
+use super::addressing::{ByteAddress, ZOffset};
 use super::opcode::ZVariable;
 use super::version::ZVersion;
 
@@ -32,6 +32,7 @@ pub mod bytes {
 }
 
 pub trait Header {
+    fn global_location(&self) -> ByteAddress;
     fn version_number(&self) -> ZVersion;
 }
 
@@ -81,7 +82,7 @@ pub trait Stack {
     fn pop_byte(&mut self) -> u8;
 
     fn read_local(&self, l: u8) -> u16;
-    fn write_local(&self, l: u8, val: u16);
+    fn write_local(&mut self, l: u8, val: u16);
 
     fn push_word(&mut self, word: u16) {
         self.push_byte((word >> 8 & 0xff) as u8);
@@ -97,7 +98,11 @@ pub trait Stack {
 }
 
 pub trait Variables {
-    fn read_variable(&self, var: ZVariable) -> u16;
+    // NOTE: read_variable requires a 'mut' self because reading from the Stack
+    // causes a mutation.
+    fn read_variable(&mut self, var: ZVariable) -> u16;
+
+    // TODO: range check variable sub-values. (MAX_LOCAL, MAX_GLOBAL)
     fn write_variable(&mut self, var: ZVariable, val: u16);
 }
 
@@ -188,12 +193,13 @@ mod test {
         assert_eq!(0xab06, memory.get_word(ByteAddress::from_raw(2)));
     }
 
+    // A Stack implementation that doesn't re-implement any of the default fns.
     #[derive(Default)]
-    struct TestStack {
+    struct BareStack {
         arr: Vec<u8>, // a very small stack.
     }
 
-    impl Stack for TestStack {
+    impl Stack for BareStack {
         fn push_byte(&mut self, val: u8) {
             self.arr.push(val);
         }
@@ -204,12 +210,12 @@ mod test {
         fn read_local(&self, l: u8) -> u16 {
             0
         }
-        fn write_local(&self, l: u8, val: u16) {}
+        fn write_local(&mut self, l: u8, val: u16) {}
     }
 
     #[test]
     fn test_stack_default_implementations() {
-        let mut stack = TestStack::default();
+        let mut stack = BareStack::default();
 
         stack.push_byte(0x01);
         stack.push_word(0x0203);

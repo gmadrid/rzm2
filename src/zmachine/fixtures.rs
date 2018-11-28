@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::addressing::ZOffset;
 use super::opcode::ZVariable;
-use super::traits::{Memory, Variables, PC};
+use super::traits::{Memory, Stack, Variables, PC};
 
 pub struct TestPC {
     pub pc: usize,
@@ -38,7 +38,7 @@ impl TestVariables {
 }
 
 impl Variables for TestVariables {
-    fn read_variable(&self, var: ZVariable) -> u16 {
+    fn read_variable(&mut self, var: ZVariable) -> u16 {
         *self.variables.get(&var).unwrap_or(&0)
     }
 
@@ -63,7 +63,7 @@ impl Memory for TestMemory {
     where
         T: Into<ZOffset> + Copy,
     {
-        panic!("unimplemented")
+        self.bytes[at.into().value()]
     }
 
     fn set_byte<T>(&mut self, at: T, val: u8)
@@ -72,5 +72,41 @@ impl Memory for TestMemory {
     {
         let offset = at.into();
         self.bytes[offset.value()] = val;
+    }
+}
+
+#[derive(Default)]
+pub struct TestStack {
+    pub arr: Vec<u8>, // a very small stack.
+    pub map: HashMap<u8, u16>,
+}
+
+impl TestStack {
+    pub fn new(size: usize) -> TestStack {
+        TestStack {
+            arr: vec![0; size],
+            ..TestStack::default()
+        }
+    }
+}
+
+impl Stack for TestStack {
+    fn push_byte(&mut self, val: u8) {
+        self.arr.push(val);
+    }
+    fn pop_byte(&mut self) -> u8 {
+        self.arr.pop().unwrap()
+    }
+
+    fn read_local(&self, l: u8) -> u16 {
+        if self.map.contains_key(&l) {
+            self.map[&l]
+        } else {
+            0
+        }
+    }
+
+    fn write_local(&mut self, l: u8, val: u16) {
+        self.map.insert(l, val);
     }
 }

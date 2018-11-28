@@ -107,11 +107,14 @@ impl fmt::Display for ZOperand {
     }
 }
 
+pub const MAX_LOCAL: u8 = 0x0e;
+pub const MAX_GLOBAL: u8 = 0xef;
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ZVariable {
     Stack,
-    Local(u8),  // 0..e
-    Global(u8), // 0..ef
+    Local(u8),  // 0..MAX_LOCAL
+    Global(u8), // 0..MAX_GLOBAL
 }
 
 impl From<u8> for ZVariable {

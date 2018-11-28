@@ -102,7 +102,7 @@ where
             }
         }
 
-        let mut variables = ZVariables::new(self.memory.clone(), self.stack.clone());
+        let mut variables = ZVariables::new(self.header.global_location(), self.memory.clone(), self.stack.clone());
         match opcode {
             0 => call_null(var_op::o_224_call(&mut self.pc, operands)),
             1 => call_null(var_op::o_225_storew(&self.memory, &mut variables, operands)),
@@ -131,7 +131,7 @@ where
             ZOperand::read_operand(&mut self.pc, ZOperandType::VariableType)
         };
 
-        let mut variables = ZVariables::new(self.memory.clone(), self.stack.clone());
+        let mut variables = ZVariables::new(self.header.global_location(), self.memory.clone(), self.stack.clone());
         match opcode {
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => call_null(two_op::o_13_store(&mut variables, operands)),
