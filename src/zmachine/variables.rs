@@ -34,7 +34,11 @@ where
     }
 }
 
-impl<M, S> Variables for ZVariables<M, S> where M: Memory, S: Stack {
+impl<M, S> Variables for ZVariables<M, S>
+where
+    M: Memory,
+    S: Stack,
+{
     fn read_variable(&self, var: ZVariable) -> u16 {
         use self::ZVariable::*;
         match var {

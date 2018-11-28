@@ -126,6 +126,10 @@ impl Stack for ZStack {
     fn read_local(&self, l: u8) -> u16 {
         panic!("unimplemented")
     }
+
+    fn write_local(&self, l: u8, val: u16) {
+        panic!("unimplemented")
+    }
 }
 
 #[cfg(test)]

@@ -59,9 +59,16 @@ impl TestMemory {
 }
 
 impl Memory for TestMemory {
+    fn get_byte<T>(&self, at: T) -> u8
+    where
+        T: Into<ZOffset> + Copy,
+    {
+        panic!("unimplemented")
+    }
+
     fn set_byte<T>(&mut self, at: T, val: u8)
     where
-        T: Into<ZOffset>,
+        T: Into<ZOffset> + Copy,
     {
         let offset = at.into();
         self.bytes[offset.value()] = val;

@@ -73,6 +73,13 @@ impl ZMemory {
 }
 
 impl Memory for ZMemory {
+    fn get_byte<T>(&self, at: T) -> u8
+    where
+        T: Into<ZOffset> + Copy,
+    {
+        panic!("unimplemented")
+    }
+
     fn set_byte<T>(&mut self, at: T, val: u8)
     where
         T: Into<ZOffset>,
@@ -94,7 +101,7 @@ mod test {
         vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
     }
 
-    fn test_mem(vers: ZVersion) -> Handle<ZMemory> {
+    fn make_test_mem(vers: ZVersion) -> Handle<ZMemory> {
         let mut bytes = sample_bytes();
         bytes[0] = vers as u8;
         ZMemory::new(&mut Cursor::new(&bytes)).unwrap().0
@@ -102,7 +109,7 @@ mod test {
 
     #[test]
     fn test_new() {
-        let zmem = test_mem(ZVersion::V3);
+        let zmem = make_test_mem(ZVersion::V3);
 
         // Check some stuff is consistent.
         // - header consistency
@@ -113,7 +120,7 @@ mod test {
 
     #[test]
     fn test_byte_address() {
-        let zmem = test_mem(ZVersion::V3);
+        let zmem = make_test_mem(ZVersion::V3);
 
         assert_eq!(3, zmem.borrow().read_byte(ByteAddress::from_raw(0)));
         assert_eq!(8, zmem.borrow().read_byte(ByteAddress::from_raw(5)));

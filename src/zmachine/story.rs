@@ -1,8 +1,8 @@
 use std::io::Read;
 
 use super::addressing::ZPC;
-use super::header::ZHeader;
 use super::handle::new_handle;
+use super::header::ZHeader;
 use super::memory::ZMemory;
 use super::processor::ZProcessor;
 use super::result::Result;
