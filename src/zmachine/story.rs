@@ -2,6 +2,7 @@ use std::io::Read;
 
 use super::addressing::ZPC;
 use super::header::ZHeader;
+use super::handle::new_handle;
 use super::memory::ZMemory;
 use super::processor::ZProcessor;
 use super::result::Result;
@@ -14,7 +15,7 @@ pub fn new_story_processor<T: Read>(
     let (story_h, header) = ZMemory::new(rdr)?;
     // TODO: For V6, you will need to treat the start_pc as a PackedAddress.
     let pc = ZPC::new(&story_h, header.start_pc(), header.version_number());
-    let stack = ZStack::new();
+    let stack = new_handle(ZStack::new());
 
     Ok(ZProcessor::new(story_h, header, pc, stack))
 }

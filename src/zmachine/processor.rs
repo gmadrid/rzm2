@@ -19,7 +19,7 @@ where
     pub memory: Handle<M>,
     pub header: H,
     pub pc: P,
-    pub stack: S,
+    pub stack: Handle<S>,
 }
 
 impl<H, M, P, S> ZProcessor<H, M, P, S>
@@ -29,7 +29,7 @@ where
     P: PC,
     S: Stack,
 {
-    pub fn new(memory: Handle<M>, header: H, pc: P, stack: S) -> ZProcessor<H, M, P, S> {
+    pub fn new(memory: Handle<M>, header: H, pc: P, stack: Handle<S>) -> ZProcessor<H, M, P, S> {
         ZProcessor {
             memory,
             header,
@@ -102,7 +102,7 @@ where
             }
         }
 
-        let mut variables = ZVariables {};
+        let mut variables = ZVariables::new(self.memory.clone(), self.stack.clone());
         match opcode {
             0 => call_null(var_op::o_224_call(&mut self.pc, operands)),
             1 => call_null(var_op::o_225_storew(&self.memory, &mut variables, operands)),
@@ -131,7 +131,7 @@ where
             ZOperand::read_operand(&mut self.pc, ZOperandType::VariableType)
         };
 
-        let mut variables = ZVariables {};
+        let mut variables = ZVariables::new(self.memory.clone(), self.stack.clone());
         match opcode {
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => call_null(two_op::o_13_store(&mut variables, operands)),

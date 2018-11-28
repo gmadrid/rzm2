@@ -86,7 +86,7 @@ impl ZStack {
         // TODO: figure out that AsRef thing here.
         self.push_byte(u8::from(*return_var));
         self.push_byte(num_locals);
-        for i in 0..num_locals {
+        for _ in 0..num_locals {
             self.push_word(0);
         }
 
@@ -121,6 +121,10 @@ impl Stack for ZStack {
     fn pop_byte(&mut self) -> u8 {
         self.sp -= 1;
         self.stack[self.sp]
+    }
+
+    fn read_local(&self, l: u8) -> u16 {
+        panic!("unimplemented")
     }
 }
 

@@ -37,6 +37,7 @@ pub trait Memory {
 pub trait Stack {
     fn push_byte(&mut self, val: u8);
     fn pop_byte(&mut self) -> u8;
+    fn read_local(&self, l: u8) -> u16;
 
     fn push_word(&mut self, word: u16) {
         self.push_byte((word >> 8 & 0xff) as u8);
