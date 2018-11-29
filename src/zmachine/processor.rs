@@ -116,7 +116,7 @@ where
                 &mut self.pc,
                 &self.stack,
                 &mut self.variables,
-                &self.header.version_number(),
+                self.header.version_number(),
                 operands,
             )),
             1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),

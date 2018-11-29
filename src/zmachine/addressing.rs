@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::handle::Handle;
 use super::memory::ZMemory;
 use super::traits::PC;
@@ -59,10 +61,22 @@ impl PackedAddress {
     }
 }
 
+impl From<PackedAddress> for usize {
+    fn from(pa: PackedAddress) -> usize {
+        let offset = ZOffset::from(pa);
+        offset.value()
+    }
+}
+
 impl From<PackedAddress> for ZOffset {
     fn from(pa: PackedAddress) -> ZOffset {
-        // TODO: this only works in V3! XXX
         ZOffset(usize::from(pa.val) * usize::from(pa.multiplier) + usize::from(pa.offset))
+    }
+}
+
+impl fmt::Display for PackedAddress {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "p{:x}", usize::from(*self))
     }
 }
 

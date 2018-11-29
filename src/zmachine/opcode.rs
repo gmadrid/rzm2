@@ -2,7 +2,7 @@ use std::fmt;
 
 use log::{debug, warn};
 
-use super::addressing::ByteAddress;
+use super::addressing::{ByteAddress, PackedAddress};
 use super::handle::Handle;
 use super::result::Result;
 use super::traits::{Memory, Stack, Variables, PC};
@@ -342,7 +342,7 @@ pub mod var_op {
         pc: &mut P,
         stack: &Handle<S>,
         variables: &mut V,
-        version: &ZVersion,
+        version: ZVersion,
         operands: [ZOperand; 4],
     ) where
         P: PC,
@@ -354,13 +354,15 @@ pub mod var_op {
         let return_pc = pc.current_pc();
 
         // DO NOT SUBMIT. Make this a PackedAddress and DTRT.
-        pc.set_current_pc(usize::from(operands[0].value(variables)) * 2);
+        let packed = PackedAddress::new(operands[0].value(variables), version);
+
+        pc.set_current_pc(packed.into());
 
         // Read function header.
         let num_locals = pc.next_byte();
 
         let mut local_values = [0u16; 15];
-        if *version < ZVersion::V5 {
+        if version < ZVersion::V5 {
             // On <V5, the function header also contains the starting values for the locals.
             for i in 0..num_locals {
                 local_values[usize::from(i)] = pc.next_word();
@@ -371,10 +373,14 @@ pub mod var_op {
             .borrow_mut()
             .push_frame(return_pc, num_locals, store.into(), &local_values);
 
+        // TODO: do you ever push the arguments? I think you're not.
+        // TODO: something is not right about the interaction between the routine header
+        //       and the parameters. Write some test cases for this.
+
         // TODO: print operand[0] as a PackedAddress.
         debug!(
             "call        {} {} {} {} -> {}      XXX",
-            operands[0], operands[1], operands[2], operands[3], store
+            packed, operands[1], operands[2], operands[3], store
         );
     }
 
