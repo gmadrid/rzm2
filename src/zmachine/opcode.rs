@@ -479,17 +479,17 @@ mod test {
 
     use super::super::fixtures::TestPC;
     #[test]
-    fn test_interpret_branch() {
+    fn test_interpret_offset_byte() {
         let mut pc = TestPC::new(10, vec![0; 0]);
-        assert_eq!(0b10_1010, interpret_branch(0b0110_1010, &mut pc));
+        assert_eq!(0b10_1010, interpret_offset_byte(0b0110_1010, &mut pc));
 
         let mut pc = TestPC::new(10, vec![0xab]);
-        assert_eq!(0x0aab, interpret_branch(0b0000_1010, &mut pc));
+        assert_eq!(0x0aab, interpret_offset_byte(0b0000_1010, &mut pc));
 
         let mut pc = TestPC::new(10, vec![0xab]);
         assert_eq!(
             0b1110_1010_1010_1011u32 as i16,
-            interpret_branch(0b0010_1010, &mut pc)
+            interpret_offset_byte(0b0010_1010, &mut pc)
         );
     }
 
