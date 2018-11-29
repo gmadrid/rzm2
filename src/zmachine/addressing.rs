@@ -83,23 +83,15 @@ impl ZPC {
             mem_h: mem_h.clone(),
         }
     }
-
-    // pub fn inc(&mut self) {
-    //     self.inc_by(1);
-    // }
-
-    // pub fn inc_by(&mut self, increment: i16) {
-    //     if increment < 0 {
-    //         self.pc -= -increment as usize;
-    //     } else {
-    //         self.pc += increment as usize;
-    //     }
-    // }
 }
 
 impl PC for ZPC {
     fn current_pc(&self) -> usize {
         self.pc
+    }
+
+    fn set_current_pc(&mut self, new_pc: usize) {
+        self.pc = new_pc;
     }
 
     fn next_byte(&mut self) -> u8 {

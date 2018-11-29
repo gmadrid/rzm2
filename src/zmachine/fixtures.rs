@@ -20,6 +20,10 @@ impl PC for TestPC {
         self.pc
     }
 
+    fn set_current_pc(&mut self, new_pc: usize) {
+        self.pc = new_pc;
+    }
+
     fn next_byte(&mut self) -> u8 {
         self.pc += 1;
         self.values.remove(0)
@@ -108,5 +112,15 @@ impl Stack for TestStack {
 
     fn write_local(&mut self, l: u8, val: u16) {
         self.map.insert(l, val);
+    }
+
+    fn push_frame(
+        &mut self,
+        return_pc: usize,
+        num_locals: u8,
+        return_var: ZVariable,
+        operands: &[u16],
+    ) {
+        panic!("unimplemented");
     }
 }

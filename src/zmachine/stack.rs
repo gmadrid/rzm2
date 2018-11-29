@@ -77,46 +77,6 @@ impl ZStack {
         bytes::byte_from_slice(&self.stack, self.fp + ZStack::NUM_LOCALS_OFFSET).into()
     }
 
-    pub fn push_frame(
-        &mut self,
-        return_pc: usize,
-        num_locals: u8,
-        return_var: ZVariable,
-        operands: &[u16],
-    ) {
-        // Steps:
-        // - save sp to new_fp
-        // - push fp
-        // - save new_fp to fp
-        // - push return_pc
-        // - push return_var
-        // - push num_locals
-        // - push space for each local variable (initted to 0)
-        // - set locals from operands
-        // - set stack bottom to stack_next.
-        let new_fp = self.sp;
-        let old_fp = self.fp;
-        self.push_word(old_fp as u16);
-        self.fp = new_fp;
-        self.push_addr(return_pc);
-        // TODO: figure out that AsRef thing here.
-        self.push_byte(u8::from(return_var));
-        self.push_byte(num_locals);
-        for _ in 0..num_locals {
-            self.push_word(0);
-        }
-
-        for (idx, op) in operands.iter().enumerate() {
-            if idx >= num_locals.into() {
-                // TODO: probably want a warning here.
-                break;
-            }
-            self.write_local(idx as u8, *op);
-        }
-
-        self.s0 = self.sp;
-    }
-
     pub fn pop_frame(&mut self) {
         // Steps:
         // - Remember current fp (call it old_fp).
@@ -164,6 +124,46 @@ impl Stack for ZStack {
             self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
             val,
         );
+    }
+
+    fn push_frame(
+        &mut self,
+        return_pc: usize,
+        num_locals: u8,
+        return_var: ZVariable,
+        operands: &[u16],
+    ) {
+        // Steps:
+        // - save sp to new_fp
+        // - push fp
+        // - save new_fp to fp
+        // - push return_pc
+        // - push return_var
+        // - push num_locals
+        // - push space for each local variable (initted to 0)
+        // - set locals from operands
+        // - set stack bottom to stack_next.
+        let new_fp = self.sp;
+        let old_fp = self.fp;
+        self.push_word(old_fp as u16);
+        self.fp = new_fp;
+        self.push_addr(return_pc);
+        // TODO: figure out that AsRef thing here.
+        self.push_byte(u8::from(return_var));
+        self.push_byte(num_locals);
+        for _ in 0..num_locals {
+            self.push_word(0);
+        }
+
+        for (idx, op) in operands.iter().enumerate() {
+            if idx >= num_locals.into() {
+                // TODO: probably want a warning here.
+                break;
+            }
+            self.write_local(idx as u8, *op);
+        }
+
+        self.s0 = self.sp;
     }
 }
 

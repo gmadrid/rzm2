@@ -48,6 +48,7 @@ pub trait Header {
 
 pub trait PC {
     fn current_pc(&self) -> usize;
+    fn set_current_pc(&mut self, new_pc: usize);
     fn next_byte(&mut self) -> u8;
 
     fn next_word(&mut self) -> u16 {
@@ -93,6 +94,14 @@ pub trait Stack {
 
     fn read_local(&self, l: u8) -> u16;
     fn write_local(&mut self, l: u8, val: u16);
+
+    fn push_frame(
+        &mut self,
+        return_pc: usize,
+        num_locals: u8,
+        return_var: ZVariable,
+        operands: &[u16],
+    );
 
     fn push_word(&mut self, word: u16) {
         self.push_byte((word >> 8 & 0xff) as u8);
@@ -157,6 +166,8 @@ mod test {
             self.val += 1;
             self.val
         }
+
+        fn set_current_pc(&mut self, new_pc: usize) {}
     }
 
     #[test]
@@ -221,6 +232,14 @@ mod test {
             0
         }
         fn write_local(&mut self, l: u8, val: u16) {}
+        fn push_frame(
+            &mut self,
+            return_pc: usize,
+            num_locals: u8,
+            return_var: ZVariable,
+            operands: &[u16],
+        ) {
+        }
     }
 
     #[test]

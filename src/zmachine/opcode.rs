@@ -4,7 +4,8 @@ use log::{debug, warn};
 
 use super::addressing::ByteAddress;
 use super::handle::Handle;
-use super::traits::{Memory, Variables, PC};
+use super::traits::{Memory, Stack, Variables, PC};
+use super::version::ZVersion;
 
 // Each (non-extended) opcode indicates its type (Short, Long, Var) with the top two bits.
 pub const OPCODE_TYPE_MASK: u8 = 0b1100_0000;
@@ -175,8 +176,44 @@ pub mod zero_op {
 
 pub mod one_op {}
 
+fn interpret_branch<P>(byte: u8, pc: &mut P) -> i16
+where
+    P: PC,
+{
+    // TODO: move all of the pc manipulation here so that it can be called from all branches.
+    if byte & 0b0100_0000 != 0 {
+        // One byte only.
+        i16::from(byte & 0b0011_1111)
+    } else {
+        let second_byte = pc.next_byte();
+        let mut offset: u16 = ((byte as u16 & 0b0011_1111) << 8) + second_byte as u16;
+        // Check for a negative 14-bit value, and sign extend to 16-bit if necessary.
+        if offset & 0b0010_0000_0000_0000 != 0 {
+            offset |= 0b1100_0000_0000_0000;
+        }
+
+        offset as i16
+
+        // WARNING TODO: You need to subtract 2 from the offset.
+    }
+}
+
 pub mod two_op {
     use super::*;
+
+    // ZSpec: 2OP:1 0x01 je a b ?(label)
+    // UNTESTED
+    pub fn o_1_je<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
+    where
+        P: PC,
+        V: Variables,
+    {
+        let byte = pc.next_byte();
+        let truth_test = if byte & 0b1000_0000 == 0 { false } else { true };
+        let offset = interpret_branch(byte, pc);
+
+        panic!("unimplemented NOT DONE YET");
+    }
 
     // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
     // UNTESTED
@@ -234,14 +271,38 @@ pub mod var_op {
 
     // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     // UNTESTED
-    pub fn o_224_call<P, S>(pc: &mut P, stack: &Handle<S>, operands: [ZOperand; 4])
-    where
+    pub fn o_224_call<P, S, V>(
+        pc: &mut P,
+        stack: &Handle<S>,
+        variables: &mut V,
+        version: &ZVersion,
+        operands: [ZOperand; 4],
+    ) where
         P: PC,
+        S: Stack,
+        V: Variables,
     {
         let store = pc.next_byte();
 
-        //        let next_pc = self.pc.current_pc();
-        //        let pa = self.header.version_number().make_packed_address(val);
+        let return_pc = pc.current_pc();
+
+        // DO NOT SUBMIT. Make this a PackedAddress and DTRT.
+        pc.set_current_pc(usize::from(operands[0].value(variables)) * 2);
+
+        // Read function header.
+        let num_locals = pc.next_byte();
+
+        let mut local_values = [0u16; 15];
+        if *version < ZVersion::V5 {
+            // On <V5, the function header also contains the starting values for the locals.
+            for i in 0..num_locals {
+                local_values[usize::from(i)] = pc.next_word();
+            }
+        }
+
+        stack
+            .borrow_mut()
+            .push_frame(return_pc, num_locals, store.into(), &local_values);
 
         debug!(
             "call        {} {} {} {} -> {}      XXX",
@@ -348,4 +409,21 @@ mod test {
         assert_eq!(0xab, mem_h.borrow().bytes[244]);
         assert_eq!(0xcd, mem_h.borrow().bytes[245]);
     }
+
+    use super::super::fixtures::TestPC;
+    #[test]
+    fn test_interpret_branch() {
+        let mut pc = TestPC::new(10, vec![0; 0]);
+        assert_eq!(0b10_1010, interpret_branch(0b0110_1010, &mut pc));
+
+        let mut pc = TestPC::new(10, vec![0xab]);
+        assert_eq!(0x0aab, interpret_branch(0b0000_1010, &mut pc));
+
+        let mut pc = TestPC::new(10, vec![0xab]);
+        assert_eq!(
+            0b1110_1010_1010_1011u32 as i16,
+            interpret_branch(0b0010_1010, &mut pc)
+        );
+    }
+
 }

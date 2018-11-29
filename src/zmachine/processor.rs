@@ -108,7 +108,13 @@ where
             self.stack.clone(),
         );
         match opcode {
-            0 => call_null(var_op::o_224_call(&mut self.pc, &self.stack, operands)),
+            0 => call_null(var_op::o_224_call(
+                &mut self.pc,
+                &self.stack,
+                &mut variables,
+                &self.header.version_number(),
+                operands,
+            )),
             1 => call_null(var_op::o_225_storew(&self.memory, &mut variables, operands)),
             3 => call_null(var_op::o_227_put_prop(operands)),
             _ => panic!("Unimplemented var opcode: {}", opcode),
@@ -141,6 +147,7 @@ where
             self.stack.clone(),
         );
         match opcode {
+            0x01 => call_null(two_op::o_1_je(&mut self.pc, &mut variables, operands)),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => call_null(two_op::o_13_store(&mut variables, operands)),
             0x14 => call_null(two_op::o_20_add(&mut self.pc, &mut variables, operands)),
