@@ -1,6 +1,7 @@
 use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::opcode::ZVariable;
+use super::result::Result;
 use super::traits::{Memory, Stack, Variables};
 
 pub struct ZVariables<M, S>
@@ -52,9 +53,9 @@ where
         self.mem_h.borrow().get_word(offset)
     }
 
-    fn write_global(&self, g: u8, word: u16) {
+    fn write_global(&self, g: u8, word: u16) -> Result<()> {
         let offset = self.global_location.inc_by(2 * u16::from(g));
-        self.mem_h.borrow_mut().set_word(offset, word);
+        self.mem_h.borrow_mut().set_word(offset, word)
     }
 }
 
@@ -72,11 +73,17 @@ where
         }
     }
 
-    fn write_variable(&mut self, var: ZVariable, val: u16) {
+    fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()> {
         use self::ZVariable::*;
         match var {
-            Stack => self.push_stack(val),
-            Local(l) => self.write_local(l, val),
+            Stack => {
+                self.push_stack(val);
+                Ok(())
+            }
+            Local(l) => {
+                self.write_local(l, val);
+                Ok(())
+            }
             Global(g) => self.write_global(g, val),
         }
     }

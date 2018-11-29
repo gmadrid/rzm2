@@ -68,18 +68,16 @@ impl From<PackedAddress> for ZOffset {
 
 pub struct ZPC {
     pc: usize,
-    version: ZVersion,
     mem_h: Handle<ZMemory>,
 }
 
 impl ZPC {
-    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T, version: ZVersion) -> ZPC
+    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T) -> ZPC
     where
         T: Into<ZOffset>,
     {
         ZPC {
             pc: start_pc.into().0,
-            version,
             mem_h: mem_h.clone(),
         }
     }
@@ -151,7 +149,6 @@ mod test {
         let pc3 = ZPC::new(
             &test_mem(ZVersion::V3),
             PackedAddress::new(0xccdd, ZVersion::V3),
-            ZVersion::V3,
         );
         // TODO: do this.
         //        assert_eq!(0x199ba, pc3.pc);

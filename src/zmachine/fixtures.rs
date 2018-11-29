@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::addressing::ZOffset;
 use super::opcode::ZVariable;
+use super::result::Result;
 use super::traits::{Memory, Stack, Variables, PC};
 
 pub struct TestPC {
@@ -46,8 +47,9 @@ impl Variables for TestVariables {
         *self.variables.get(&var).unwrap_or(&0)
     }
 
-    fn write_variable(&mut self, var: ZVariable, val: u16) {
+    fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()> {
         self.variables.insert(var, val);
+        Ok(())
     }
 }
 
@@ -70,12 +72,13 @@ impl Memory for TestMemory {
         self.bytes[at.into().value()]
     }
 
-    fn set_byte<T>(&mut self, at: T, val: u8)
+    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {
         let offset = at.into();
         self.bytes[offset.value()] = val;
+        Ok(())
     }
 }
 

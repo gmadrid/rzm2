@@ -4,9 +4,8 @@ use super::opcode::{
     ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK, SHORT_OPCODE_TYPE_MASK,
     VAR_OPCODE_TYPE_MASK,
 };
-use super::result::Result;
+use super::result::{Result, ToTrue};
 use super::traits::{Header, Memory, Stack, Variables, PC};
-use super::variables::ZVariables;
 use super::version::ZVersion;
 
 pub struct ZProcessor<H, M, P, S, V>
@@ -120,11 +119,7 @@ where
                 &self.header.version_number(),
                 operands,
             )),
-            1 => call_null(var_op::o_225_storew(
-                &self.memory,
-                &mut self.variables,
-                operands,
-            )),
+            1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
             3 => call_null(var_op::o_227_put_prop(operands)),
             _ => panic!("Unimplemented var opcode: {}", opcode),
         }
@@ -153,17 +148,9 @@ where
         match opcode {
             0x01 => call_null(two_op::o_1_je(&mut self.pc, &mut self.variables, operands)),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
-            0x0d => call_null(two_op::o_13_store(&mut self.variables, operands)),
-            0x14 => call_null(two_op::o_20_add(
-                &mut self.pc,
-                &mut self.variables,
-                operands,
-            )),
-            0x15 => call_null(two_op::o_21_sub(
-                &mut self.pc,
-                &mut self.variables,
-                operands,
-            )),
+            0x0d => two_op::o_13_store(&mut self.variables, operands).to_true(),
+            0x14 => two_op::o_20_add(&mut self.pc, &mut self.variables, operands).to_true(),
+            0x15 => two_op::o_21_sub(&mut self.pc, &mut self.variables, operands).to_true(),
             _ => self.unimplemented("long", opcode),
         }
     }

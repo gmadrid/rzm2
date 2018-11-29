@@ -10,6 +10,16 @@ pub enum ZErr {
     IO(io::Error),
 }
 
+pub trait ToTrue {
+    fn to_true(self) -> Result<bool>;
+}
+
+impl ToTrue for Result<()> {
+    fn to_true(self) -> Result<bool> {
+        self.map(|_| true)
+    }
+}
+
 impl From<io::Error> for ZErr {
     fn from(err: io::Error) -> ZErr {
         ZErr::IO(err)

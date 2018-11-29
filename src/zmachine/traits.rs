@@ -1,5 +1,6 @@
 use super::addressing::{ByteAddress, ZOffset};
 use super::opcode::ZVariable;
+use super::result::Result;
 use super::version::ZVersion;
 
 pub mod bytes {
@@ -69,7 +70,7 @@ pub trait Memory {
     where
         T: Into<ZOffset> + Copy;
 
-    fn set_byte<T>(&mut self, at: T, val: u8)
+    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy;
 
@@ -82,15 +83,16 @@ pub trait Memory {
         (high_byte << 8) + low_byte
     }
 
-    fn set_word<T>(&mut self, at: T, val: u16)
+    // May fail if word is outside dynamic memory.
+    fn set_word<T>(&mut self, at: T, val: u16) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {
         let high_byte = ((val >> 8) & 0xff) as u8;
         let low_byte = (val & 0xff) as u8;
         let offset = at.into();
-        self.set_byte(offset, high_byte);
-        self.set_byte(offset.inc_by(1), low_byte);
+        self.set_byte(offset, high_byte)?;
+        self.set_byte(offset.inc_by(1), low_byte)
     }
 }
 
@@ -128,7 +130,7 @@ pub trait Variables {
     fn read_variable(&mut self, var: ZVariable) -> u16;
 
     // TODO: range check variable sub-values. (MAX_LOCAL, MAX_GLOBAL)
-    fn write_variable(&mut self, var: ZVariable, val: u16);
+    fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()>;
 }
 
 #[cfg(test)]
@@ -196,11 +198,12 @@ mod test {
             self.val[at.into().value()]
         }
 
-        fn set_byte<T>(&mut self, at: T, val: u8)
+        fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
         where
             T: Into<ZOffset> + Copy,
         {
             self.val[at.into().value()] = val;
+            Ok(())
         }
     }
 

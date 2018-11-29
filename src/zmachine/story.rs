@@ -15,7 +15,7 @@ pub fn new_story_processor<T: Read>(
 ) -> Result<ZProcessor<ZHeader, ZMemory, ZPC, ZStack, ZVariables<ZMemory, ZStack>>> {
     let (story_h, header) = ZMemory::new(rdr)?;
     // TODO: For V6, you will need to treat the start_pc as a PackedAddress.
-    let pc = ZPC::new(&story_h, header.start_pc(), header.version_number());
+    let pc = ZPC::new(&story_h, header.start_pc());
     let stack_h = new_handle(ZStack::new());
 
     let variables = ZVariables::new(header.global_location(), story_h.clone(), stack_h.clone());

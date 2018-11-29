@@ -80,11 +80,12 @@ impl Memory for ZMemory {
         self.bytes[at.into().value()]
     }
 
-    fn set_byte<T>(&mut self, at: T, val: u8)
+    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {
         self.bytes[at.into().value()] = val;
+        Ok(())
     }
 }
 

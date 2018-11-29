@@ -4,6 +4,7 @@ use log::{debug, warn};
 
 use super::addressing::ByteAddress;
 use super::handle::Handle;
+use super::result::Result;
 use super::traits::{Memory, Stack, Variables, PC};
 use super::version::ZVersion;
 
@@ -17,10 +18,10 @@ pub const EXTENDED_OPCODE_SENTINEL: u8 = 0xbe;
 
 // This is the only way that I can find to use these values as both constants in a 'match'
 // and enum values.
-const LargeConstantTypeConst: u8 = 0b00;
-const SmallConstantTypeConst: u8 = 0b01;
-const VariableTypeConst: u8 = 0b10;
-const OmittedTypeConst: u8 = 0b11;
+const LARGE_CONSTANT_TYPE_BITS: u8 = 0b00;
+const SMALL_CONSTANT_TYPE_BITS: u8 = 0b01;
+const VARIABLE_TYPE_BITS: u8 = 0b10;
+const OMITTED_TYPE_BITS: u8 = 0b11;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ZOperandType {
@@ -34,10 +35,10 @@ impl From<u8> for ZOperandType {
     fn from(byte: u8) -> ZOperandType {
         // from must never fail, so it ignores the top bits.
         match byte & 0b11 {
-            LargeConstantTypeConst => ZOperandType::LargeConstantType,
-            SmallConstantTypeConst => ZOperandType::SmallConstantType,
-            VariableTypeConst => ZOperandType::VariableType,
-            OmittedTypeConst => ZOperandType::OmittedType,
+            LARGE_CONSTANT_TYPE_BITS => ZOperandType::LargeConstantType,
+            SMALL_CONSTANT_TYPE_BITS => ZOperandType::SmallConstantType,
+            VARIABLE_TYPE_BITS => ZOperandType::VariableType,
+            OMITTED_TYPE_BITS => ZOperandType::OmittedType,
             _ => panic!("This can't happen?"),
         }
     }
@@ -272,7 +273,7 @@ pub mod two_op {
     }
 
     // ZSpec: 2OP:13 0x0D store (variable) value
-    pub fn o_13_store<V>(variables: &mut V, operands: [ZOperand; 2])
+    pub fn o_13_store<V>(variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
     where
         V: Variables,
     {
@@ -280,11 +281,11 @@ pub mod two_op {
         debug!("store       {} {}             XXX", variable, operands[1]);
 
         let value = operands[1].value(variables);
-        variables.write_variable(variable, value);
+        variables.write_variable(variable, value)
     }
 
     // ZSpec: 2OP:20 0x14 add a b -> (result)
-    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
+    pub fn o_20_add<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
     where
         P: PC,
         V: Variables,
@@ -304,11 +305,11 @@ pub mod two_op {
             warn!("add {:x} + {:x} causes overflow.", lhs, rhs);
         }
 
-        variables.write_variable(variable, result);
+        variables.write_variable(variable, result)
     }
 
     // ZSpec: TODO
-    pub fn o_21_sub<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
+    pub fn o_21_sub<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
     where
         P: PC,
         V: Variables,
@@ -328,7 +329,7 @@ pub mod two_op {
             warn!("sub {:x} - {:x} causes overflow.", lhs, rhs);
         }
 
-        variables.write_variable(variable, result as u16);
+        variables.write_variable(variable, result as u16)
     }
 }
 
@@ -378,7 +379,11 @@ pub mod var_op {
     }
 
     // ZSpec: VAR:225 0x01 storew array word-index value
-    pub fn o_225_storew<M, V>(mem_h: &Handle<M>, variables: &mut V, operands: [ZOperand; 4])
+    pub fn o_225_storew<M, V>(
+        mem_h: &Handle<M>,
+        variables: &mut V,
+        operands: [ZOperand; 4],
+    ) -> Result<()>
     where
         M: Memory,
         V: Variables,
@@ -393,7 +398,7 @@ pub mod var_op {
         let value = operands[2].value(variables);
 
         let ba = ByteAddress::from_raw(array).inc_by(2 * word_index);
-        mem_h.borrow_mut().set_word(ba, value);
+        mem_h.borrow_mut().set_word(ba, value)
     }
 
     // ZSpec: VAR:227 0x03 put_prop object property value
