@@ -151,6 +151,7 @@ where
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => call_null(two_op::o_13_store(&mut variables, operands)),
             0x14 => call_null(two_op::o_20_add(&mut self.pc, &mut variables, operands)),
+            0x15 => call_null(two_op::o_21_sub(&mut self.pc, &mut variables, operands)),
             _ => self.unimplemented("long", opcode),
         }
     }

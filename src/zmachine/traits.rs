@@ -51,6 +51,12 @@ pub trait PC {
     fn set_current_pc(&mut self, new_pc: usize);
     fn next_byte(&mut self) -> u8;
 
+    fn offset_pc(&mut self, offset: isize) {
+        // TODO: check for 1 and 2 which should never happen.
+        let pc = self.current_pc() as isize;
+        self.set_current_pc((pc + offset) as usize);
+    }
+
     fn next_word(&mut self) -> u16 {
         let high_byte = self.next_byte();
         let low_byte = self.next_byte();

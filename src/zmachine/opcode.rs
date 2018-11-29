@@ -77,6 +77,16 @@ impl ZOperand {
         }
     }
 
+    fn maybe_value<V>(&self, variables: &mut V) -> Option<u16>
+    where
+        V: Variables,
+    {
+        match *self {
+            ZOperand::Omitted => Option::None,
+            _ => Option::Some(self.value(variables)),
+        }
+    }
+
     fn value<V>(&self, variables: &mut V) -> u16
     where
         V: Variables,
@@ -176,7 +186,7 @@ pub mod zero_op {
 
 pub mod one_op {}
 
-fn interpret_branch<P>(byte: u8, pc: &mut P) -> i16
+fn interpret_offset_byte<P>(byte: u8, pc: &mut P) -> i16
 where
     P: PC,
 {
@@ -193,8 +203,28 @@ where
         }
 
         offset as i16
+    }
+}
 
-        // WARNING TODO: You need to subtract 2 from the offset.
+fn branch<P, F>(byte: u8, pc: &mut P, tst: F)
+where
+    F: FnOnce(i16, bool) -> bool,
+    P: PC,
+{
+    let branch_on_truth = !((byte & 0b1000_0000) == 0);
+    let offset = interpret_offset_byte(byte, pc);
+
+    let truth = tst(offset, branch_on_truth);
+
+    if branch_on_truth == truth {
+        // Branch!
+        match offset {
+            0 => panic!("unimplemented: ret false"),
+            1 => panic!("unimplemented: ret true"),
+            o => {
+                pc.offset_pc((o - 2) as isize);
+            }
+        }
     }
 }
 
@@ -208,11 +238,24 @@ pub mod two_op {
         P: PC,
         V: Variables,
     {
-        let byte = pc.next_byte();
-        let truth_test = if byte & 0b1000_0000 == 0 { false } else { true };
-        let offset = interpret_branch(byte, pc);
+        let first_offset_byte = pc.next_byte();
+        branch(first_offset_byte, pc, |offset, branch_on_truth| {
+            debug!(
+                "je          {} {} ?{}(x{:x})",
+                operands[0],
+                operands[1],
+                if branch_on_truth { "" } else { "~" },
+                offset
+            );
+            let first_val = operands[0].maybe_value(variables);
+            let second_val = operands[1].maybe_value(variables);
 
-        panic!("unimplemented NOT DONE YET");
+            if first_val.is_some() && second_val.is_some() {
+                first_val.unwrap() == second_val.unwrap()
+            } else {
+                false
+            }
+        });
     }
 
     // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
@@ -258,12 +301,35 @@ pub mod two_op {
 
         let (result, overflow) = lhs.overflowing_add(rhs);
         if overflow {
-            warn!("add {} + {} causes overflow.", lhs, rhs);
+            warn!("add {:x} + {:x} causes overflow.", lhs, rhs);
         }
 
         variables.write_variable(variable, result);
     }
 
+    // ZSpec: TODO
+    pub fn o_21_sub<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
+    where
+        P: PC,
+        V: Variables,
+    {
+        let store = pc.next_byte();
+        let variable = ZVariable::from(store);
+        debug!(
+            "sub         {} {} -> {}       XXX",
+            operands[0], operands[1], variable
+        );
+
+        let lhs = operands[0].value(variables) as i16;
+        let rhs = operands[1].value(variables) as i16;
+
+        let (result, overflow) = lhs.overflowing_sub(rhs);
+        if overflow {
+            warn!("sub {:x} - {:x} causes overflow.", lhs, rhs);
+        }
+
+        variables.write_variable(variable, result as u16);
+    }
 }
 
 pub mod var_op {
@@ -304,6 +370,7 @@ pub mod var_op {
             .borrow_mut()
             .push_frame(return_pc, num_locals, store.into(), &local_values);
 
+        // TODO: print operand[0] as a PackedAddress.
         debug!(
             "call        {} {} {} {} -> {}      XXX",
             operands[0], operands[1], operands[2], operands[3], store
