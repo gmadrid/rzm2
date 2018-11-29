@@ -309,6 +309,7 @@ pub mod two_op {
     }
 
     // ZSpec: TODO
+    // UNTESTED
     pub fn o_21_sub<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
     where
         P: PC,
