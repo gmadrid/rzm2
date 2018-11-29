@@ -5,36 +5,46 @@ use super::opcode::{
     VAR_OPCODE_TYPE_MASK,
 };
 use super::result::Result;
-use super::traits::{Header, Memory, Stack, /* Variables, */ PC};
+use super::traits::{Header, Memory, Stack, Variables, PC};
 use super::variables::ZVariables;
 use super::version::ZVersion;
 
-pub struct ZProcessor<H, M, P, S>
+pub struct ZProcessor<H, M, P, S, V>
 where
     H: Header,
     M: Memory,
     P: PC,
     S: Stack,
+    V: Variables,
 {
     pub memory: Handle<M>,
     pub header: H,
     pub pc: P,
     pub stack: Handle<S>,
+    pub variables: V,
 }
 
-impl<H, M, P, S> ZProcessor<H, M, P, S>
+impl<H, M, P, S, V> ZProcessor<H, M, P, S, V>
 where
     H: Header,
     M: Memory,
     P: PC,
     S: Stack,
+    V: Variables,
 {
-    pub fn new(memory: Handle<M>, header: H, pc: P, stack: Handle<S>) -> ZProcessor<H, M, P, S> {
+    pub fn new(
+        memory: Handle<M>,
+        header: H,
+        pc: P,
+        stack: Handle<S>,
+        variables: V,
+    ) -> ZProcessor<H, M, P, S, V> {
         ZProcessor {
             memory,
             header,
             pc,
             stack,
+            variables,
         }
     }
 
@@ -102,20 +112,19 @@ where
             }
         }
 
-        let mut variables = ZVariables::new(
-            self.header.global_location(),
-            self.memory.clone(),
-            self.stack.clone(),
-        );
         match opcode {
             0 => call_null(var_op::o_224_call(
                 &mut self.pc,
                 &self.stack,
-                &mut variables,
+                &mut self.variables,
                 &self.header.version_number(),
                 operands,
             )),
-            1 => call_null(var_op::o_225_storew(&self.memory, &mut variables, operands)),
+            1 => call_null(var_op::o_225_storew(
+                &self.memory,
+                &mut self.variables,
+                operands,
+            )),
             3 => call_null(var_op::o_227_put_prop(operands)),
             _ => panic!("Unimplemented var opcode: {}", opcode),
         }
@@ -141,17 +150,20 @@ where
             ZOperand::read_operand(&mut self.pc, ZOperandType::VariableType)
         };
 
-        let mut variables = ZVariables::new(
-            self.header.global_location(),
-            self.memory.clone(),
-            self.stack.clone(),
-        );
         match opcode {
-            0x01 => call_null(two_op::o_1_je(&mut self.pc, &mut variables, operands)),
+            0x01 => call_null(two_op::o_1_je(&mut self.pc, &mut self.variables, operands)),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
-            0x0d => call_null(two_op::o_13_store(&mut variables, operands)),
-            0x14 => call_null(two_op::o_20_add(&mut self.pc, &mut variables, operands)),
-            0x15 => call_null(two_op::o_21_sub(&mut self.pc, &mut variables, operands)),
+            0x0d => call_null(two_op::o_13_store(&mut self.variables, operands)),
+            0x14 => call_null(two_op::o_20_add(
+                &mut self.pc,
+                &mut self.variables,
+                operands,
+            )),
+            0x15 => call_null(two_op::o_21_sub(
+                &mut self.pc,
+                &mut self.variables,
+                operands,
+            )),
             _ => self.unimplemented("long", opcode),
         }
     }
