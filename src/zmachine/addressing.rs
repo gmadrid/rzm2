@@ -149,28 +149,6 @@ mod test {
     use zmachine::fixtures::TestMemory;
     use zmachine::handle::new_handle;
 
-    // #[test]
-    // fn test_pc_inc() {
-    //     let mut pc = PC(8, ZVersion::V3);
-    //     assert_eq!(8, pc.0);
-    //     pc.inc();
-    //     assert_eq!(9, pc.0);
-    //     pc.inc();
-    //     assert_eq!(10, pc.0);
-    // }
-
-    // #[test]
-    // fn test_pc_inc_by() {
-    //     let mut pc = PC(13, ZVersion::V3);
-    //     assert_eq!(13, pc.0);
-
-    //     pc.inc_by(5);
-    //     assert_eq!(18, pc.0);
-
-    //     pc.inc_by(-3);
-    //     assert_eq!(15, pc.0);
-    // }
-
     fn sample_bytes() -> Vec<u8> {
         vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
     }
@@ -187,11 +165,5 @@ mod test {
             &test_mem(ZVersion::V3),
             PackedAddress::new(0xccdd, ZVersion::V3),
         );
-        // TODO: do this.
-        //        assert_eq!(0x199ba, pc3.pc);
-
-        // TODO: put this back in.
-        //        let pc5 = PC::new(&test_mem(ZVersion::V3), PackedAddress(0xccdd), ZVersion::V5);
-        //        assert_eq!(0x33374, pc5.pc);
     }
 }
