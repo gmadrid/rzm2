@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::memory::ZMemory;
@@ -98,8 +96,12 @@ mod test {
     fn basic_header() -> Vec<u8> {
         vec![
             3, // 0x00: version number (3)
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x01-0x07
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x08 - 0x0f
+            0x00, 0x00, 0x00, // 0x01 - 0x03
+            0x77, 0x22, // 0x04: high memory base (0x7722)
+            0x34, 0x56, // 0x06: start pc (0x1122)
+            0x00, 0x00, 0x00, 0x00, // 0x08 - 0x0b
+            0x11, 0x22,  // 0x0c: global location (0x1122)
+            0x87, 0x64, // 0x0e - 0x0f
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x10 - 0x17
             0x00, 0x00, // 0x18 - 0x19
             0x00, 0x12, // 0x1a - 0x1b: file length
@@ -120,6 +122,10 @@ mod test {
     fn test_basic() {
         let (_, hdr) = new_test_story();
         assert_eq!(ZVersion::V3, hdr.version_number());
+        assert_eq!(ByteAddress::from_raw(0x3456), hdr.start_pc());
+        assert_eq!(ByteAddress::from_raw(0x1122), hdr.global_location());
+        assert_eq!(ByteAddress::from_raw(0x8764), hdr.static_memory_base());
+        assert_eq!(ByteAddress::from_raw(0x7722), hdr.high_memory_base());
     }
 
     #[test]
@@ -127,6 +133,8 @@ mod test {
         let (_, hdr) = new_test_story();
         assert_eq!(0x24, hdr.file_length());
 
+        // TODO: test file length is below required mimimums.
+        // TODO: test that file loaded is the same length as the file length in the header.
         let mut v5_bytes = basic_header();
         v5_bytes[0] = 5;
         v5_bytes[0x1b] = 0x09;

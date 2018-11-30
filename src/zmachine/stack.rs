@@ -161,7 +161,6 @@ impl Stack for ZStack {
         let old_fp = self.fp;
         self.sp = old_fp;
         let saved_fp = self.saved_fp();
-        println!("saved fp: {}", saved_fp);
         self.fp = saved_fp;
         // TODO: make sure you haven't underflowed.
 

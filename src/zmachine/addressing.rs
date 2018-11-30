@@ -17,7 +17,7 @@ impl ZOffset {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ByteAddress(u16);
 
 impl ByteAddress {
