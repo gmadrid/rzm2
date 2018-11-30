@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use std::io::Read;
 
 use super::addressing::{ByteAddress, ZOffset};
@@ -122,8 +120,13 @@ mod test {
     fn test_new() {
         let zmem = make_test_mem(ZVersion::V3);
 
-        // Check some stuff is consistent.
+        // TODO:Check some stuff is consistent.
         // - header consistency
+        // - file size consistency
+        // - static/heap relationship
+
+        assert_eq!(ZOffset::from(ByteAddress::from_raw(0x0080)), zmem.borrow().static_mem);
+        assert_eq!(ZOffset::from(ByteAddress::from_raw(0x00a0)), zmem.borrow().high_mem);
 
         // We read the entire array.
         assert_eq!(sample_bytes().len(), zmem.borrow().memory_size());
