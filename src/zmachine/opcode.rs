@@ -396,9 +396,7 @@ pub mod var_op {
 
         let return_pc = pc.current_pc();
 
-        // DO NOT SUBMIT. Make this a PackedAddress and DTRT.
-        let packed = PackedAddress::new(operands[0].value(variables), version);
-
+        let packed = version.make_packed_address(operands[0].value(variables));
         pc.set_current_pc(packed.into());
 
         // Read function header.

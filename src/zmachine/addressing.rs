@@ -59,11 +59,7 @@ pub struct PackedAddress {
 }
 
 impl PackedAddress {
-    pub fn new(val: u16, version: ZVersion) -> PackedAddress {
-        let multiplier = match version {
-            ZVersion::V3 => 2,
-            ZVersion::V5 => 4,
-        };
+    pub fn new(val: u16, multiplier: u8) -> PackedAddress {
         PackedAddress {
             val,
             multiplier,
@@ -174,11 +170,11 @@ mod test {
 
     #[test]
     fn test_packed_address() {
-        let pa3 = PackedAddress::new(53, ZVersion::V3);
+        let pa3 = ZVersion::V3.make_packed_address(53);
         assert_eq!(106, usize::from(pa3));
         assert_eq!(106, ZOffset::from(pa3).value());
 
-        let pa5 = PackedAddress::new(53, ZVersion::V5);
+        let pa5 = ZVersion::V5.make_packed_address(53);
         assert_eq!(212, usize::from(pa5));
         assert_eq!(212, ZOffset::from(pa5).value());
     }

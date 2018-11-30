@@ -28,7 +28,14 @@ impl ZVersion {
     }
 
     pub fn make_packed_address(&self, val: u16) -> PackedAddress {
-        PackedAddress::new(val, *self)
+        use self::ZVersion::*;
+        PackedAddress::new(
+            val,
+            match self {
+                V3 => 2,
+                V5 => 4,
+            },
+        )
     }
 
     pub fn convert_file_length(&self, raw_length: u16) -> usize {
