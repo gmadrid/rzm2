@@ -50,12 +50,12 @@ where
 
     fn read_global(&self, g: u8) -> u16 {
         let offset = self.global_location.inc_by(2 * u16::from(g));
-        self.mem_h.borrow().get_word(offset)
+        self.mem_h.borrow().read_word(offset)
     }
 
     fn write_global(&self, g: u8, word: u16) -> Result<()> {
         let offset = self.global_location.inc_by(2 * u16::from(g));
-        self.mem_h.borrow_mut().set_word(offset, word)
+        self.mem_h.borrow_mut().write_word(offset, word)
     }
 }
 

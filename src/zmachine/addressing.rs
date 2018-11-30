@@ -39,6 +39,18 @@ impl From<ByteAddress> for ZOffset {
 #[derive(Clone, Copy, Debug)]
 pub struct WordAddress(u16);
 
+impl WordAddress {
+    pub fn from_raw(word: u16) -> WordAddress {
+        WordAddress(word)
+    }    
+}
+
+impl From<WordAddress> for ZOffset {
+    fn from(ba: WordAddress) -> ZOffset {
+        ZOffset(usize::from(ba.0) * 2)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct PackedAddress {
     val: u16,
@@ -116,7 +128,7 @@ where
 
     fn next_byte(&mut self) -> u8 {
         let offset = ZOffset(self.pc);
-        let byte = self.mem_h.borrow().get_byte(offset);
+        let byte = self.mem_h.borrow().read_byte(offset);
         self.pc += 1;
         byte
     }

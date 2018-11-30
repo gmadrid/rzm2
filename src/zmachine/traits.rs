@@ -68,33 +68,33 @@ pub trait PC {
 }
 
 pub trait Memory {
-    fn get_byte<T>(&self, at: T) -> u8
+    fn read_byte<T>(&self, at: T) -> u8
     where
         T: Into<ZOffset> + Copy;
 
-    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
+    fn write_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy;
 
-    fn get_word<T>(&self, at: T) -> u16
+    fn read_word<T>(&self, at: T) -> u16
     where
         T: Into<ZOffset> + Copy,
     {
-        let high_byte = u16::from(self.get_byte(at.into()));
-        let low_byte = u16::from(self.get_byte(at.into().inc_by(1)));
+        let high_byte = u16::from(self.read_byte(at.into()));
+        let low_byte = u16::from(self.read_byte(at.into().inc_by(1)));
         (high_byte << 8) + low_byte
     }
 
     // May fail if word is outside dynamic memory.
-    fn set_word<T>(&mut self, at: T, val: u16) -> Result<()>
+    fn write_word<T>(&mut self, at: T, val: u16) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {
         let high_byte = ((val >> 8) & 0xff) as u8;
         let low_byte = (val & 0xff) as u8;
         let offset = at.into();
-        self.set_byte(offset, high_byte)?;
-        self.set_byte(offset.inc_by(1), low_byte)
+        self.write_byte(offset, high_byte)?;
+        self.write_byte(offset.inc_by(1), low_byte)
     }
 }
 
@@ -193,14 +193,14 @@ mod test {
     }
 
     impl Memory for TestMemory {
-        fn get_byte<T>(&self, at: T) -> u8
+        fn read_byte<T>(&self, at: T) -> u8
         where
             T: Into<ZOffset> + Copy,
         {
             self.val[at.into().value()]
         }
 
-        fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
+        fn write_byte<T>(&mut self, at: T, val: u8) -> Result<()>
         where
             T: Into<ZOffset> + Copy,
         {
@@ -214,15 +214,15 @@ mod test {
         let mut arr = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
         let mut memory = TestMemory { val: arr };
 
-        assert_eq!(0x0405, memory.get_word(ByteAddress::from_raw(1)));
-        assert_eq!(0x1011, memory.get_word(ByteAddress::from_raw(13)));
+        assert_eq!(0x0405, memory.read_word(ByteAddress::from_raw(1)));
+        assert_eq!(0x1011, memory.read_word(ByteAddress::from_raw(13)));
 
-        memory.set_word(ByteAddress::from_raw(1), 0x89ab);
+        memory.write_word(ByteAddress::from_raw(1), 0x89ab);
 
         // now: [3, 0x89, 0xab, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-        assert_eq!(0x0389, memory.get_word(ByteAddress::from_raw(0)));
-        assert_eq!(0x89ab, memory.get_word(ByteAddress::from_raw(1)));
-        assert_eq!(0xab06, memory.get_word(ByteAddress::from_raw(2)));
+        assert_eq!(0x0389, memory.read_word(ByteAddress::from_raw(0)));
+        assert_eq!(0x89ab, memory.read_word(ByteAddress::from_raw(1)));
+        assert_eq!(0xab06, memory.read_word(ByteAddress::from_raw(2)));
     }
 
     // A Stack implementation that doesn't re-implement any of the default fns.

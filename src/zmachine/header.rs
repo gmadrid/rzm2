@@ -2,7 +2,7 @@ use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::memory::ZMemory;
 use super::result::Result;
-use super::traits::Header;
+use super::traits::{Header, Memory};
 use super::version::ZVersion;
 
 // Offsets for fields in the header. (ZSpec 11.1)

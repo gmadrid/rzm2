@@ -69,14 +69,14 @@ impl TestMemory {
 }
 
 impl Memory for TestMemory {
-    fn get_byte<T>(&self, at: T) -> u8
+    fn read_byte<T>(&self, at: T) -> u8
     where
         T: Into<ZOffset> + Copy,
     {
         self.bytes[at.into().value()]
     }
 
-    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
+    fn write_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {

@@ -64,37 +64,17 @@ impl ZMemory {
     pub fn memory_size(&self) -> usize {
         self.bytes.len()
     }
-
-    // Read the byte at location ZOffset in the ZMemory.
-    pub fn read_byte<T>(&self, index: T) -> u8
-    where
-        T: Into<ZOffset>,
-    {
-        self.bytes[index.into().value()]
-    }
-
-    // Read the (big-endian) word at location ZOffset in ZMemory.
-    // The ZOffset need not be word-aligned.
-    pub fn read_word<T>(&self, index: T) -> u16
-    where
-        T: Into<ZOffset>,
-    {
-        let offset = index.into();
-        let high_byte = self.bytes[offset.value()];
-        let low_byte = self.bytes[offset.value() + 1];
-        (u16::from(high_byte) << 8) + u16::from(low_byte)
-    }
 }
 
 impl Memory for ZMemory {
-    fn get_byte<T>(&self, at: T) -> u8
+    fn read_byte<T>(&self, at: T) -> u8
     where
         T: Into<ZOffset> + Copy,
     {
         self.bytes[at.into().value()]
     }
 
-    fn set_byte<T>(&mut self, at: T, val: u8) -> Result<()>
+    fn write_byte<T>(&mut self, at: T, val: u8) -> Result<()>
     where
         T: Into<ZOffset> + Copy,
     {
@@ -107,8 +87,8 @@ impl Memory for ZMemory {
 mod test {
     use std::io::Cursor;
 
-    use super::super::addressing::ByteAddress;
-    use super::super::handle::{new_handle, Handle};
+    use super::super::addressing::{ByteAddress, WordAddress};
+    use super::super::handle::{Handle};
     use super::super::version::ZVersion;
     use super::*;
 
@@ -156,5 +136,20 @@ mod test {
 
         // Read a word from a non-word-aligned location.
         assert_eq!(0x8000, zmem.borrow().read_word(ByteAddress::from_raw(0x0f)));
+    }
+
+    fn test_word_address() {
+        let zmem = make_test_mem(ZVersion::V3);
+
+        let wa = WordAddress::from_raw(0x02);
+        assert_eq!(0x0000, zmem.borrow().read_word(wa));
+        zmem.borrow_mut().write_word(wa, 0x1234).unwrap();
+        assert_eq!(0x1234, zmem.borrow().read_word(wa));
+
+        // Read/write from/to a non-word-aligned location.
+        let wa = WordAddress::from_raw(0x03);
+        assert_eq!(0x0000, zmem.borrow().read_word(wa));
+        zmem.borrow_mut().write_word(wa, 0x6789).unwrap();
+        assert_eq!(0x6789, zmem.borrow().read_word(wa));
     }
 }

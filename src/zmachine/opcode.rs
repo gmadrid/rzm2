@@ -405,7 +405,7 @@ pub mod var_op {
         let value = operands[2].value(variables);
 
         let ba = ByteAddress::from_raw(array).inc_by(2 * word_index);
-        mem_h.borrow_mut().set_word(ba, value)
+        mem_h.borrow_mut().write_word(ba, value)
     }
 
     // ZSpec: VAR:227 0x03 put_prop object property value
