@@ -123,10 +123,12 @@ where
     }
 
     fn set_current_pc(&mut self, new_pc: usize) {
+        // TODO: check range.
         self.pc = new_pc;
     }
 
     fn next_byte(&mut self) -> u8 {
+        // TODO: check range.
         let offset = ZOffset(self.pc);
         let byte = self.mem_h.borrow().read_byte(offset);
         self.pc += 1;
@@ -149,21 +151,53 @@ mod test {
     use zmachine::fixtures::TestMemory;
     use zmachine::handle::new_handle;
 
-    fn sample_bytes() -> Vec<u8> {
-        vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
-    }
+    #[test]
+    fn test_zoffset() {
+        let zo = ZOffset(48);
+        assert_eq!(48, zo.value());
 
-    fn test_mem(vers: ZVersion) -> Handle<TestMemory> {
-        let mut bytes = sample_bytes();
-        bytes[0] = vers as u8;
-        new_handle(TestMemory::new_from_vec(bytes))
+        assert_eq!(52, zo.inc_by(4).value())
     }
 
     #[test]
-    fn test_pc_new_vers() {
-        let pc3 = ZPC::new(
-            &test_mem(ZVersion::V3),
-            PackedAddress::new(0xccdd, ZVersion::V3),
-        );
+    fn test_byte_address() {
+        let ba = ByteAddress::from_raw(58);
+        assert_eq!(58, ZOffset::from(ba).value());
+        assert_eq!(65, ZOffset::from(ba.inc_by(7)).value());
+    }
+
+    #[test]
+    fn test_word_address() {
+        let wa = WordAddress::from_raw(62);
+        assert_eq!(124, ZOffset::from(wa).value());
+    }
+
+    #[test]
+    fn test_packed_address() {
+        let pa3 = PackedAddress::new(53, ZVersion::V3);
+        assert_eq!(106, usize::from(pa3));
+        assert_eq!(106, ZOffset::from(pa3).value());
+
+        let pa5 = PackedAddress::new(53, ZVersion::V5);
+        assert_eq!(212, usize::from(pa5));
+        assert_eq!(212, ZOffset::from(pa5).value());
+    }
+
+    #[test]
+    fn test_pc() {
+        let test_mem = new_handle(TestMemory::new_from_vec(vec![
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        ]));
+        let mut pc = ZPC::new(&test_mem, ZOffset(5));
+
+        assert_eq!(5, pc.current_pc());
+        pc.set_current_pc(9);
+        assert_eq!(9, pc.current_pc());
+
+        assert_eq!(9, pc.next_byte());
+        assert_eq!(10, pc.next_byte());
+        assert_eq!(11, pc.current_pc());
+
+        assert_eq!(11, ZOffset::from(pc).value());
     }
 }
