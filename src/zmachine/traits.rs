@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use super::addressing::{ByteAddress, ZOffset};
 use super::opcode::ZVariable;
 use super::result::Result;
@@ -143,7 +141,7 @@ pub trait Variables {
 
 #[cfg(test)]
 mod test {
-    use super::super::addressing::ByteAddress;
+    use zmachine::addressing::ByteAddress;
     use super::*;
 
     #[test]
