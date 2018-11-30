@@ -68,16 +68,20 @@ impl Header for ZHeader {
         ByteAddress::from_raw(raw_value)
     }
 
-    fn high_memory_base(&self) -> u16 {
-        self.memory
-            .borrow()
-            .read_word(ByteAddress::from_raw(HOF_HIGH_MEMORY_BASE))
+    fn high_memory_base(&self) -> ByteAddress {
+        ByteAddress::from_raw(
+            self.memory
+                .borrow()
+                .read_word(ByteAddress::from_raw(HOF_HIGH_MEMORY_BASE)),
+        )
     }
 
-    fn static_memory_base(&self) -> u16 {
-        self.memory
-            .borrow()
-            .read_word(ByteAddress::from_raw(HOF_STATIC_MEMORY_BASE))
+    fn static_memory_base(&self) -> ByteAddress {
+        ByteAddress::from_raw(
+            self.memory
+                .borrow()
+                .read_word(ByteAddress::from_raw(HOF_STATIC_MEMORY_BASE)),
+        )
     }
 }
 

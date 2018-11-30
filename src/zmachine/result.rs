@@ -6,6 +6,7 @@ pub type Result<T> = result::Result<T, ZErr>;
 #[derive(Debug)]
 pub enum ZErr {
     UnknownVersionNumber(u8),
+    WriteViolation(usize),
 
     IO(io::Error),
 }

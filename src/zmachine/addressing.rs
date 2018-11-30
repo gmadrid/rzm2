@@ -4,7 +4,7 @@ use super::handle::Handle;
 use super::traits::{Memory, PC};
 use super::version::ZVersion;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ZOffset(usize);
 
 impl ZOffset {
@@ -42,7 +42,7 @@ pub struct WordAddress(u16);
 impl WordAddress {
     pub fn from_raw(word: u16) -> WordAddress {
         WordAddress(word)
-    }    
+    }
 }
 
 impl From<WordAddress> for ZOffset {

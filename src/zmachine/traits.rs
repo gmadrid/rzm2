@@ -44,8 +44,8 @@ pub mod bytes {
 
 pub trait Header {
     fn global_location(&self) -> ByteAddress;
-    fn high_memory_base(&self) -> u16;
-    fn static_memory_base(&self) -> u16;
+    fn high_memory_base(&self) -> ByteAddress;
+    fn static_memory_base(&self) -> ByteAddress;
     fn version_number(&self) -> ZVersion;
 }
 

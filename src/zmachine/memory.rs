@@ -1,9 +1,9 @@
 use std::io::Read;
 
-use super::addressing::ZOffset;
+use super::addressing::{ByteAddress, ZOffset};
 use super::handle::{new_handle, Handle};
 use super::header::{self, ZHeader};
-use super::result::Result;
+use super::result::{Result, ZErr};
 use super::traits::{bytes, Header, Memory};
 
 // The "core memory" of the ZMachine. A memory-mapped story file.
@@ -25,8 +25,8 @@ use super::traits::{bytes, Header, Memory};
 pub struct ZMemory {
     bytes: Box<[u8]>,
 
-    static_mem: u16, // Byte address of the base of static memory.
-    high_mem: u16,   // Byte address of the base of high memory.
+    static_mem: ZOffset, // Offset of the base of static memory.
+    high_mem: ZOffset,   // Offset of the base of high memory.
 }
 
 impl ZMemory {
@@ -48,14 +48,14 @@ impl ZMemory {
 
         let zmem = new_handle(ZMemory {
             bytes: byte_vec.into(),
-            static_mem: static_base,
-            high_mem: high_base,
+            static_mem: ByteAddress::from_raw(static_base).into(),
+            high_mem: ByteAddress::from_raw(high_base).into(),
         });
 
         let header = ZHeader::new(&zmem)?;
 
-        assert_eq!(static_base, header.static_memory_base());
-        assert_eq!(high_base, header.high_memory_base());
+        assert_eq!(zmem.borrow().static_mem, header.static_memory_base().into());
+        assert_eq!(zmem.borrow().high_mem, header.high_memory_base().into());
 
         Ok((zmem, header))
     }
@@ -78,8 +78,13 @@ impl Memory for ZMemory {
     where
         T: Into<ZOffset> + Copy,
     {
-        self.bytes[at.into().value()] = val;
-        Ok(())
+        let offset = at.into();
+        if offset < self.static_mem {
+            self.bytes[offset.value()] = val;
+            Ok(())
+        } else {
+            Err(ZErr::WriteViolation(offset.value()))
+        }
     }
 }
 
@@ -88,7 +93,7 @@ mod test {
     use std::io::Cursor;
 
     use super::super::addressing::{ByteAddress, WordAddress};
-    use super::super::handle::{Handle};
+    use super::super::handle::Handle;
     use super::super::version::ZVersion;
     use super::*;
 
@@ -138,11 +143,12 @@ mod test {
         assert_eq!(0x8000, zmem.borrow().read_word(ByteAddress::from_raw(0x0f)));
     }
 
+    #[test]
     fn test_word_address() {
         let zmem = make_test_mem(ZVersion::V3);
 
         let wa = WordAddress::from_raw(0x02);
-        assert_eq!(0x0000, zmem.borrow().read_word(wa));
+        assert_eq!(0x00a0, zmem.borrow().read_word(wa));
         zmem.borrow_mut().write_word(wa, 0x1234).unwrap();
         assert_eq!(0x1234, zmem.borrow().read_word(wa));
 
@@ -151,5 +157,20 @@ mod test {
         assert_eq!(0x0000, zmem.borrow().read_word(wa));
         zmem.borrow_mut().write_word(wa, 0x6789).unwrap();
         assert_eq!(0x6789, zmem.borrow().read_word(wa));
+    }
+
+    #[test]
+    fn test_write_violation() {
+        let zmem = make_test_mem(ZVersion::V3);
+
+        let static_base = zmem.borrow().static_mem;
+        assert!(match zmem.borrow_mut().write_byte(static_base, 0x8888) {
+            Err(ZErr::WriteViolation(val)) if val == static_base.value() => true,
+            _ => false,
+        });
+        assert!(match zmem.borrow_mut().write_word(static_base, 0x9999) {
+            Err(ZErr::WriteViolation(val)) if val == static_base.value() => true,
+            _ => false,
+        })
     }
 }
