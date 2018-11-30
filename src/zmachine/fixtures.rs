@@ -62,6 +62,10 @@ impl TestMemory {
         let vec = vec![0; size];
         TestMemory { bytes: vec }
     }
+
+    pub fn new_from_vec(bytes: Vec<u8>) -> TestMemory {
+        TestMemory { bytes }
+    }
 }
 
 impl Memory for TestMemory {

@@ -2,9 +2,9 @@ use std::io::Read;
 
 use super::addressing::ZOffset;
 use super::handle::{new_handle, Handle};
-use super::header::ZHeader;
+use super::header::{self, ZHeader};
 use super::result::Result;
-use super::traits::Memory;
+use super::traits::{bytes, Header, Memory};
 
 // The "core memory" of the ZMachine. A memory-mapped story file.
 //
@@ -24,6 +24,9 @@ use super::traits::Memory;
 //
 pub struct ZMemory {
     bytes: Box<[u8]>,
+
+    static_mem: u16, // Byte address of the base of static memory.
+    high_mem: u16,   // Byte address of the base of high memory.
 }
 
 impl ZMemory {
@@ -37,11 +40,22 @@ impl ZMemory {
         let mut byte_vec = Vec::<u8>::new();
         rdr.read_to_end(&mut byte_vec)?;
 
+        // Have to bootstrap these.
+        let static_base =
+            bytes::word_from_slice(&byte_vec, usize::from(header::HOF_STATIC_MEMORY_BASE));
+        let high_base =
+            bytes::word_from_slice(&byte_vec, usize::from(header::HOF_HIGH_MEMORY_BASE));
+
         let zmem = new_handle(ZMemory {
             bytes: byte_vec.into(),
+            static_mem: static_base,
+            high_mem: high_base,
         });
 
         let header = ZHeader::new(&zmem)?;
+
+        assert_eq!(static_base, header.static_memory_base());
+        assert_eq!(high_base, header.high_memory_base());
 
         Ok((zmem, header))
     }
@@ -94,18 +108,29 @@ mod test {
     use std::io::Cursor;
 
     use super::super::addressing::ByteAddress;
-    use super::super::handle::Handle;
+    use super::super::handle::{new_handle, Handle};
     use super::super::version::ZVersion;
     use super::*;
 
     fn sample_bytes() -> Vec<u8> {
-        vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
+        let mut bytes = vec![
+            3, // version number
+            0, 0, 0, // 0x01-0x03
+            0x00, 0xa0, // start of high memory
+            0x00, 0x00, // start pc
+            0x00, 0x00, 0x00, 0x00, 0x12, 0x34, // 0x08 - 0x0d
+            0x00, 0x80, // start of static memory
+        ];
+        for i in bytes.len()..0x0100 {
+            bytes.push(0x00)
+        }
+        bytes
     }
 
     fn make_test_mem(vers: ZVersion) -> Handle<ZMemory> {
         let mut bytes = sample_bytes();
         bytes[0] = vers as u8;
-        ZMemory::new(&mut Cursor::new(&bytes)).unwrap().0
+        ZMemory::new(&mut Cursor::new(bytes)).unwrap().0
     }
 
     #[test]
@@ -124,12 +149,12 @@ mod test {
         let zmem = make_test_mem(ZVersion::V3);
 
         assert_eq!(3, zmem.borrow().read_byte(ByteAddress::from_raw(0)));
-        assert_eq!(8, zmem.borrow().read_byte(ByteAddress::from_raw(5)));
+        assert_eq!(0xa0, zmem.borrow().read_byte(ByteAddress::from_raw(5)));
 
-        assert_eq!(0x0304, zmem.borrow().read_word(ByteAddress::from_raw(0)));
-        assert_eq!(0xccdd, zmem.borrow().read_word(ByteAddress::from_raw(0x0a)));
+        assert_eq!(0x0300, zmem.borrow().read_word(ByteAddress::from_raw(0)));
+        assert_eq!(0x1234, zmem.borrow().read_word(ByteAddress::from_raw(0x0c)));
 
         // Read a word from a non-word-aligned location.
-        assert_eq!(0x09cc, zmem.borrow().read_word(ByteAddress::from_raw(0x09)));
+        assert_eq!(0x8000, zmem.borrow().read_word(ByteAddress::from_raw(0x0f)));
     }
 }

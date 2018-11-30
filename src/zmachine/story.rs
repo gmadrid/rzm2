@@ -12,7 +12,7 @@ use super::variables::ZVariables;
 
 pub fn new_story_processor<T: Read>(
     rdr: &mut T,
-) -> Result<ZProcessor<ZHeader, ZMemory, ZPC, ZStack, ZVariables<ZMemory, ZStack>>> {
+) -> Result<ZProcessor<ZHeader, ZMemory, ZPC<ZMemory>, ZStack, ZVariables<ZMemory, ZStack>>> {
     let (story_h, header) = ZMemory::new(rdr)?;
     // TODO: For V6, you will need to treat the start_pc as a PackedAddress.
     let pc = ZPC::new(&story_h, header.start_pc());

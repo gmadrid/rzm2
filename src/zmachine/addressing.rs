@@ -1,8 +1,7 @@
 use std::fmt;
 
 use super::handle::Handle;
-use super::memory::ZMemory;
-use super::traits::PC;
+use super::traits::{Memory, PC};
 use super::version::ZVersion;
 
 #[derive(Clone, Copy, Debug)]
@@ -80,13 +79,19 @@ impl fmt::Display for PackedAddress {
     }
 }
 
-pub struct ZPC {
+pub struct ZPC<M>
+where
+    M: Memory,
+{
     pc: usize,
-    mem_h: Handle<ZMemory>,
+    mem_h: Handle<M>,
 }
 
-impl ZPC {
-    pub fn new<T>(mem_h: &Handle<ZMemory>, start_pc: T) -> ZPC
+impl<M> ZPC<M>
+where
+    M: Memory,
+{
+    pub fn new<T>(mem_h: &Handle<M>, start_pc: T) -> ZPC<M>
     where
         T: Into<ZOffset>,
     {
@@ -97,7 +102,10 @@ impl ZPC {
     }
 }
 
-impl PC for ZPC {
+impl<M> PC for ZPC<M>
+where
+    M: Memory,
+{
     fn current_pc(&self) -> usize {
         self.pc
     }
@@ -108,23 +116,26 @@ impl PC for ZPC {
 
     fn next_byte(&mut self) -> u8 {
         let offset = ZOffset(self.pc);
-        let byte = self.mem_h.borrow().read_byte(offset);
+        let byte = self.mem_h.borrow().get_byte(offset);
         self.pc += 1;
         byte
     }
 }
 
-impl From<ZPC> for ZOffset {
-    fn from(pc: ZPC) -> ZOffset {
+impl<M> From<ZPC<M>> for ZOffset
+where
+    M: Memory,
+{
+    fn from(pc: ZPC<M>) -> ZOffset {
         ZOffset(pc.pc)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::io::Cursor;
-
     use super::*;
+    use zmachine::fixtures::TestMemory;
+    use zmachine::handle::new_handle;
 
     // #[test]
     // fn test_pc_inc() {
@@ -152,10 +163,10 @@ mod test {
         vec![3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 0xcc, 0xdd]
     }
 
-    fn test_mem(vers: ZVersion) -> Handle<ZMemory> {
+    fn test_mem(vers: ZVersion) -> Handle<TestMemory> {
         let mut bytes = sample_bytes();
         bytes[0] = vers as u8;
-        ZMemory::new(&mut Cursor::new(&bytes)).unwrap().0
+        new_handle(TestMemory::new_from_vec(bytes))
     }
 
     #[test]

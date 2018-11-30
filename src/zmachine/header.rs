@@ -5,11 +5,13 @@ use super::result::Result;
 use super::traits::Header;
 use super::version::ZVersion;
 
-// Offsets for fields in the header.
-pub const OS_VERSION: u16 = 0x00;
-pub const OS_START_PC: u16 = 0x06;
-pub const OS_GLOBAL_LOCATION: u16 = 0x0c;
-pub const OS_FILE_LEN: u16 = 0x1a;
+// Offsets for fields in the header. (ZSpec 11.1)
+pub const HOF_VERSION: u16 = 0x00;
+pub const HOF_HIGH_MEMORY_BASE: u16 = 0x04;
+pub const HOF_START_PC: u16 = 0x06;
+pub const HOF_GLOBAL_LOCATION: u16 = 0x0c;
+pub const HOF_STATIC_MEMORY_BASE: u16 = 0x0e;
+pub const HOF_FILE_LEN: u16 = 0x1a;
 
 // Read a Story's Header information.
 // See ZSpec 11.
@@ -24,8 +26,11 @@ pub struct ZHeader {
 
 impl ZHeader {
     pub fn new(memory: &Handle<ZMemory>) -> Result<ZHeader> {
-        let z_version =
-            ZVersion::new(memory.borrow().read_byte(ByteAddress::from_raw(OS_VERSION)))?;
+        let z_version = ZVersion::new(
+            memory
+                .borrow()
+                .read_byte(ByteAddress::from_raw(HOF_VERSION)),
+        )?;
 
         Ok(ZHeader {
             memory: memory.clone(),
@@ -37,7 +42,7 @@ impl ZHeader {
         let raw_value = self
             .memory
             .borrow()
-            .read_word(ByteAddress::from_raw(OS_START_PC));
+            .read_word(ByteAddress::from_raw(HOF_START_PC));
         ByteAddress::from_raw(raw_value)
     }
 
@@ -45,7 +50,7 @@ impl ZHeader {
         let raw_file_length = self
             .memory
             .borrow()
-            .read_word(ByteAddress::from_raw(OS_FILE_LEN));
+            .read_word(ByteAddress::from_raw(HOF_FILE_LEN));
         self.z_version.convert_file_length(raw_file_length)
     }
 }
@@ -59,8 +64,20 @@ impl Header for ZHeader {
         let raw_value = self
             .memory
             .borrow()
-            .read_word(ByteAddress::from_raw(OS_GLOBAL_LOCATION));
+            .read_word(ByteAddress::from_raw(HOF_GLOBAL_LOCATION));
         ByteAddress::from_raw(raw_value)
+    }
+
+    fn high_memory_base(&self) -> u16 {
+        self.memory
+            .borrow()
+            .read_word(ByteAddress::from_raw(HOF_HIGH_MEMORY_BASE))
+    }
+
+    fn static_memory_base(&self) -> u16 {
+        self.memory
+            .borrow()
+            .read_word(ByteAddress::from_raw(HOF_STATIC_MEMORY_BASE))
     }
 }
 
