@@ -21,6 +21,6 @@ fn main() {
     match run() {
         Ok(_) => (),
         //        Err(ItoolsError::Clap(err)) => println!("{}", err.description()),
-        Err(e) => error!("Error: {:?}", e),
+        Err(e) => eprintln!("Error: {}", e),
     }
 }

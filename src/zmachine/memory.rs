@@ -125,8 +125,14 @@ mod test {
         // - file size consistency
         // - static/heap relationship
 
-        assert_eq!(ZOffset::from(ByteAddress::from_raw(0x0080)), zmem.borrow().static_mem);
-        assert_eq!(ZOffset::from(ByteAddress::from_raw(0x00a0)), zmem.borrow().high_mem);
+        assert_eq!(
+            ZOffset::from(ByteAddress::from_raw(0x0080)),
+            zmem.borrow().static_mem
+        );
+        assert_eq!(
+            ZOffset::from(ByteAddress::from_raw(0x00a0)),
+            zmem.borrow().high_mem
+        );
 
         // We read the entire array.
         assert_eq!(sample_bytes().len(), zmem.borrow().memory_size());
