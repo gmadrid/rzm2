@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use std::fmt;
 use std::io;
 use std::result;
