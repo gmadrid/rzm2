@@ -1,5 +1,5 @@
 use super::handle::Handle;
-use super::opcode::{two_op, var_op, zero_op};
+use super::opcode::{one_op, two_op, var_op, zero_op};
 use super::opcode::{
     ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK, SHORT_OPCODE_TYPE_MASK,
     VAR_OPCODE_TYPE_MASK,
@@ -89,6 +89,13 @@ where
             }
         } else {
             match opcode {
+                0 => call_null(one_op::o_128_jz(&mut self.pc, &mut self.variables, operand)),
+                11 => call_null(one_op::o_139_ret(
+                    &mut self.pc,
+                    &self.stack,
+                    &mut self.variables,
+                    operand,
+                )),
                 _ => self.unimplemented("1op", opcode),
             }
         }

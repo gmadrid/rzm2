@@ -65,32 +65,8 @@ impl ZStack {
         ))
     }
 
-    pub fn return_pc(&self) -> usize {
-        bytes::long_word_from_slice(&self.stack, self.fp + ZStack::RETURN_PC_OFFSET) as usize
-    }
-
-    pub fn return_variable(&self) -> ZVariable {
-        bytes::byte_from_slice(&self.stack, self.fp + ZStack::RETURN_VAR_OFFSET).into()
-    }
-
     pub fn num_locals(&self) -> u8 {
         bytes::byte_from_slice(&self.stack, self.fp + ZStack::NUM_LOCALS_OFFSET).into()
-    }
-
-    pub fn pop_frame(&mut self) {
-        // Steps:
-        // - Remember current fp (call it old_fp).
-        // - Set fp to value from frame.
-        // - Set sp to old_fp.
-        // - Compute new value of s0.
-        let old_fp = self.fp;
-        self.sp = old_fp;
-        let saved_fp = self.saved_fp();
-        println!("saved fp: {}", saved_fp);
-        self.fp = saved_fp;
-        // TODO: make sure you haven't underflowed.
-
-        // What is s0 right now?
     }
 
     fn push_addr(&mut self, addr: usize) {
@@ -124,6 +100,14 @@ impl Stack for ZStack {
             self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
             val,
         );
+    }
+
+    fn return_pc(&self) -> usize {
+        bytes::long_word_from_slice(&self.stack, self.fp + ZStack::RETURN_PC_OFFSET) as usize
+    }
+
+    fn return_variable(&self) -> ZVariable {
+        bytes::byte_from_slice(&self.stack, self.fp + ZStack::RETURN_VAR_OFFSET).into()
     }
 
     fn push_frame(
@@ -164,6 +148,22 @@ impl Stack for ZStack {
         }
 
         self.s0 = self.sp;
+    }
+
+    fn pop_frame(&mut self) {
+        // Steps:
+        // - Remember current fp (call it old_fp).
+        // - Set fp to value from frame.
+        // - Set sp to old_fp.
+        // - Compute new value of s0.
+        let old_fp = self.fp;
+        self.sp = old_fp;
+        let saved_fp = self.saved_fp();
+        println!("saved fp: {}", saved_fp);
+        self.fp = saved_fp;
+        // TODO: make sure you haven't underflowed.
+
+        // What is s0 right now?
     }
 }
 

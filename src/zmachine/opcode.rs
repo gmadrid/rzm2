@@ -185,7 +185,47 @@ pub mod zero_op {
     }
 }
 
-pub mod one_op {}
+pub mod one_op {
+    use super::*;
+
+    // ZSpec: 1OP:128 0x00 jz a ?(label)
+    // UNTESTED
+    pub fn o_128_jz<P, V>(pc: &mut P, variables: &mut V, operand: ZOperand)
+    where
+        P: PC,
+        V: Variables,
+    {
+        let first_offset_byte = pc.next_byte();
+        branch(first_offset_byte, pc, |offset, branch_on_truth| {
+            debug!(
+                "jz          {} ?{}(x{:x})",
+                operand,
+                if branch_on_truth { "" } else { "~" },
+                offset
+            );
+
+            // TODO: what if this is Omitted?
+            operand.value(variables) == 0
+        });
+    }
+
+    // ZSpec: 1OP:139 0x0b ret value
+    // UNTESTED
+    pub fn o_139_ret<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V, operand: ZOperand)
+    where
+        P: PC,
+        S: Stack,
+        V: Variables,
+    {
+        let result = operand.value(variables);
+        let return_pc = stack.borrow().return_pc();
+        let return_variable = stack.borrow().return_variable();
+        stack.borrow_mut().pop_frame();
+        variables.write_variable(return_variable, result);
+        debug!("ret         {}", operand);
+        pc.set_current_pc(return_pc);
+    }
+}
 
 fn interpret_offset_byte<P>(byte: u8, pc: &mut P) -> i16
 where
@@ -396,7 +436,7 @@ pub mod var_op {
         V: Variables,
     {
         debug!(
-            "storew     {} {} {} {}             XXX",
+            "storew      {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
 

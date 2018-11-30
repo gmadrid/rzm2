@@ -130,4 +130,12 @@ impl Stack for TestStack {
     ) {
         panic!("unimplemented");
     }
+
+    fn pop_frame(&mut self) {}
+    fn return_pc(&self) -> usize {
+        panic!("unimplemented")
+    }
+    fn return_variable(&self) -> ZVariable {
+        panic!("unimplemented")
+    }
 }

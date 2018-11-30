@@ -112,6 +112,10 @@ pub trait Stack {
         return_var: ZVariable,
         operands: &[u16],
     );
+    fn pop_frame(&mut self);
+
+    fn return_pc(&self) -> usize;
+    fn return_variable(&self) -> ZVariable;
 
     fn push_word(&mut self, word: u16) {
         self.push_byte((word >> 8 & 0xff) as u8);
@@ -246,6 +250,14 @@ mod test {
         }
         fn pop_byte(&mut self) -> u8 {
             self.arr.pop().unwrap()
+        }
+
+        fn pop_frame(&mut self) {}
+        fn return_pc(&self) -> usize {
+            panic!("unimplemented")
+        }
+        fn return_variable(&self) -> ZVariable {
+            panic!("unimplemented")
         }
 
         fn read_local(&self, l: u8) -> u16 {
