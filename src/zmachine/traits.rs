@@ -55,7 +55,7 @@ pub trait PC {
     fn next_byte(&mut self) -> u8;
 
     fn offset_pc(&mut self, offset: isize) {
-        // TODO: check for 1 and 2 which should never happen.
+        // TODO: check for underflow.
         let pc = self.current_pc() as isize;
         self.set_current_pc((pc + offset) as usize);
     }
@@ -164,20 +164,22 @@ mod test {
     }
 
     struct TestPC {
-        val: u8,
+        val: usize,
     }
 
     impl PC for TestPC {
         fn current_pc(&self) -> usize {
-            0x89
+            self.val
         }
 
         fn next_byte(&mut self) -> u8 {
             self.val += 1;
-            self.val
+            self.val as u8
         }
 
-        fn set_current_pc(&mut self, new_pc: usize) {}
+        fn set_current_pc(&mut self, new_pc: usize) {
+            self.val = new_pc;
+        }
     }
 
     #[test]
@@ -186,6 +188,13 @@ mod test {
 
         assert_eq!(0x797a, pc.next_word());
         assert_eq!(0x7b7c, pc.next_word());
+
+        let mut pc = TestPC { val: 0x78 };
+        pc.offset_pc(16);
+        assert_eq!(0x88, pc.current_pc());
+
+        pc.offset_pc(-8);
+        assert_eq!(0x80, pc.current_pc());
     }
 
     struct TestMemory {

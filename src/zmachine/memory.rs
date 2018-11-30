@@ -106,9 +106,7 @@ mod test {
             0x00, 0x00, 0x00, 0x00, 0x12, 0x34, // 0x08 - 0x0d
             0x00, 0x80, // start of static memory
         ];
-        for i in bytes.len()..0x0100 {
-            bytes.push(0x00)
-        }
+        bytes.resize(0x0100, 0);
         bytes
     }
 
