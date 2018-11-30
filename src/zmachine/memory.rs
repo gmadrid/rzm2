@@ -164,7 +164,7 @@ mod test {
         let zmem = make_test_mem(ZVersion::V3);
 
         let static_base = zmem.borrow().static_mem;
-        assert!(match zmem.borrow_mut().write_byte(static_base, 0x8888) {
+        assert!(match zmem.borrow_mut().write_byte(static_base, 0x88) {
             Err(ZErr::WriteViolation(val)) if val == static_base.value() => true,
             _ => false,
         });
