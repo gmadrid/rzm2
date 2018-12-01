@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use super::addressing::PackedAddress;
 use super::result::{Result, ZErr};
 
@@ -32,8 +30,11 @@ impl ZVersion {
         PackedAddress::new(
             val,
             match self {
+                // V1...
                 V3 => 2,
+                // V4...
                 V5 => 4,
+                // V6 is special.
             },
         )
     }
