@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use super::addressing::ZOffset;
 use super::opcode::ZVariable;
-use super::result::Result;
+use super::result::{Result, ZErr};
 use super::traits::{Memory, Stack, Variables, PC};
 
 pub struct TestPC {
@@ -45,8 +45,10 @@ impl TestVariables {
 }
 
 impl Variables for TestVariables {
-    fn read_variable(&mut self, var: ZVariable) -> u16 {
-        *self.variables.get(&var).unwrap_or(&0)
+    fn read_variable(&mut self, var: ZVariable) -> Result<u16> {
+        self.variables.get(&var)
+            .map(|v| *v)
+            .ok_or(ZErr::GenericError("Variable missing"))
     }
 
     fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()> {
@@ -125,10 +127,10 @@ impl Stack for TestStack {
 
     fn push_frame(
         &mut self,
-        return_pc: usize,
-        num_locals: u8,
-        return_var: ZVariable,
-        operands: &[u16],
+        _return_pc: usize,
+        _num_locals: u8,
+        _return_var: ZVariable,
+        _operands: &[u16],
     ) {
         panic!("unimplemented");
     }

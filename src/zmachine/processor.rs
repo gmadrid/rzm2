@@ -91,13 +91,13 @@ where
             }
         } else {
             match opcode {
-                0 => call_null(one_op::o_128_jz(&mut self.pc, &mut self.variables, operand)),
-                11 => call_null(one_op::o_139_ret(
+                0 => one_op::o_128_jz(&mut self.pc, &mut self.variables, operand).to_true(),
+                11 => one_op::o_139_ret(
                     &mut self.pc,
                     &self.stack,
                     &mut self.variables,
                     operand,
-                )),
+                ).to_true(),
                 _ => self.unimplemented("1op", opcode),
             }
         }
@@ -121,13 +121,13 @@ where
         }
 
         match opcode {
-            0 => call_null(var_op::o_224_call(
+            0 => var_op::o_224_call(
                 &mut self.pc,
                 &self.stack,
                 &mut self.variables,
                 self.header.version_number(),
                 operands,
-            )),
+            ).to_true(),
             1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
             3 => call_null(var_op::o_227_put_prop(operands)),
             _ => panic!("Unimplemented var opcode: {}", opcode),
@@ -155,7 +155,7 @@ where
         };
 
         match opcode {
-            0x01 => call_null(two_op::o_1_je(&mut self.pc, &mut self.variables, operands)),
+            0x01 => two_op::o_1_je(&mut self.pc, &mut self.variables, operands).to_true(),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => two_op::o_13_store(&mut self.variables, operands).to_true(),
             0x14 => two_op::o_20_add(&mut self.pc, &mut self.variables, operands).to_true(),

@@ -4,9 +4,9 @@ use std::fmt;
 
 use log::{debug, warn};
 
-use super::addressing::{ByteAddress, PackedAddress};
+use super::addressing::ByteAddress;
 use super::handle::Handle;
-use super::result::Result;
+use super::result::{Result, ZErr};
 use super::traits::{Memory, Stack, Variables, PC};
 use super::version::ZVersion;
 
@@ -80,25 +80,15 @@ impl ZOperand {
         }
     }
 
-    fn maybe_value<V>(&self, variables: &mut V) -> Option<u16>
+    fn value<V>(&self, variables: &mut V) -> Result<u16>
     where
         V: Variables,
     {
         match *self {
-            ZOperand::Omitted => Option::None,
-            _ => Option::Some(self.value(variables)),
-        }
-    }
-
-    fn value<V>(&self, variables: &mut V) -> u16
-    where
-        V: Variables,
-    {
-        match *self {
-            ZOperand::LargeConstant(val) => val,
-            ZOperand::SmallConstant(val) => u16::from(val),
+            ZOperand::LargeConstant(val) => Ok(val),
+            ZOperand::SmallConstant(val) => Ok(u16::from(val)),
             ZOperand::Var(var) => variables.read_variable(var),
-            ZOperand::Omitted => panic!("Cannot load value from an Omitted operand."),
+            ZOperand::Omitted => Err(ZErr::MissingOperand),
         }
     }
 }
@@ -192,7 +182,7 @@ pub mod one_op {
 
     // ZSpec: 1OP:128 0x00 jz a ?(label)
     // UNTESTED
-    pub fn o_128_jz<P, V>(pc: &mut P, variables: &mut V, operand: ZOperand)
+    pub fn o_128_jz<P, V>(pc: &mut P, variables: &mut V, operand: ZOperand) -> Result<()>
     where
         P: PC,
         V: Variables,
@@ -207,25 +197,26 @@ pub mod one_op {
             );
 
             // TODO: what if this is Omitted?
-            operand.value(variables) == 0
-        });
+            Ok(operand.value(variables)? == 0)
+        })
     }
 
     // ZSpec: 1OP:139 0x0b ret value
     // UNTESTED
-    pub fn o_139_ret<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V, operand: ZOperand)
+    pub fn o_139_ret<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V, operand: ZOperand) -> Result<()>
     where
         P: PC,
         S: Stack,
         V: Variables,
     {
-        let result = operand.value(variables);
+        let result = operand.value(variables)?;
         let return_pc = stack.borrow().return_pc();
         let return_variable = stack.borrow().return_variable();
         stack.borrow_mut().pop_frame();
-        variables.write_variable(return_variable, result);
+        variables.write_variable(return_variable, result)?;
         debug!("ret         {}", operand);
         pc.set_current_pc(return_pc);
+        Ok(())
     }
 }
 
@@ -249,15 +240,15 @@ where
     }
 }
 
-fn branch<P, F>(byte: u8, pc: &mut P, tst: F)
+fn branch<P, F>(byte: u8, pc: &mut P, tst: F) -> Result<()>
 where
-    F: FnOnce(i16, bool) -> bool,
+    F: FnOnce(i16, bool) -> Result<bool>,
     P: PC,
 {
     let branch_on_truth = !((byte & 0b1000_0000) == 0);
     let offset = interpret_offset_byte(byte, pc);
 
-    let truth = tst(offset, branch_on_truth);
+    let truth = tst(offset, branch_on_truth)?;
 
     if branch_on_truth == truth {
         // Branch!
@@ -269,6 +260,7 @@ where
             }
         }
     }
+    Ok(())
 }
 
 pub mod two_op {
@@ -276,7 +268,7 @@ pub mod two_op {
 
     // ZSpec: 2OP:1 0x01 je a b ?(label)
     // UNTESTED
-    pub fn o_1_je<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2])
+    pub fn o_1_je<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
     where
         P: PC,
         V: Variables,
@@ -290,15 +282,15 @@ pub mod two_op {
                 if branch_on_truth { "" } else { "~" },
                 offset
             );
-            let first_val = operands[0].maybe_value(variables);
-            let second_val = operands[1].maybe_value(variables);
+            let first_val = operands[0].value(variables);
+            let second_val = operands[1].value(variables);
 
-            if first_val.is_some() && second_val.is_some() {
-                first_val.unwrap() == second_val.unwrap()
+            if first_val.is_ok() && second_val.is_ok() {
+                Ok(first_val.unwrap() == second_val.unwrap())
             } else {
-                false
+                Ok(false)
             }
-        });
+        })
     }
 
     // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
@@ -322,7 +314,7 @@ pub mod two_op {
         let variable = ZVariable::from(operands[0]);
         debug!("store       {} {}             XXX", variable, operands[1]);
 
-        let value = operands[1].value(variables);
+        let value = operands[1].value(variables)?;
         variables.write_variable(variable, value)
     }
 
@@ -339,8 +331,8 @@ pub mod two_op {
             operands[0], operands[1], variable
         );
 
-        let lhs = operands[0].value(variables);
-        let rhs = operands[1].value(variables);
+        let lhs = operands[0].value(variables)?;
+        let rhs = operands[1].value(variables)?;
 
         let (result, overflow) = lhs.overflowing_add(rhs);
         if overflow {
@@ -364,8 +356,8 @@ pub mod two_op {
             operands[0], operands[1], variable
         );
 
-        let lhs = operands[0].value(variables) as i16;
-        let rhs = operands[1].value(variables) as i16;
+        let lhs = operands[0].value(variables)? as i16;
+        let rhs = operands[1].value(variables)? as i16;
 
         let (result, overflow) = lhs.overflowing_sub(rhs);
         if overflow {
@@ -387,7 +379,7 @@ pub mod var_op {
         variables: &mut V,
         version: ZVersion,
         operands: [ZOperand; 4],
-    ) where
+    ) -> Result<()> where
         P: PC,
         S: Stack,
         V: Variables,
@@ -396,7 +388,7 @@ pub mod var_op {
 
         let return_pc = pc.current_pc();
 
-        let packed = version.make_packed_address(operands[0].value(variables));
+        let packed = version.make_packed_address(operands[0].value(variables)?);
         pc.set_current_pc(packed.into());
 
         // Read function header.
@@ -423,6 +415,7 @@ pub mod var_op {
             "call        {} {} {} {} -> {}      XXX",
             packed, operands[1], operands[2], operands[3], store
         );
+        Ok(())
     }
 
     // ZSpec: VAR:225 0x01 storew array word-index value
@@ -440,9 +433,9 @@ pub mod var_op {
             operands[0], operands[1], operands[2], operands[3]
         );
 
-        let array = operands[0].value(variables);
-        let word_index = operands[1].value(variables);
-        let value = operands[2].value(variables);
+        let array = operands[0].value(variables)?;
+        let word_index = operands[1].value(variables)?;
+        let value = operands[2].value(variables)?;
 
         let ba = ByteAddress::from_raw(array).inc_by(2 * word_index);
         mem_h.borrow_mut().write_word(ba, value)
@@ -475,7 +468,7 @@ mod test {
         let mut variables = TestVariables::new();
         let operands: [ZOperand; 2] = [ZOperand::SmallConstant(3), ZOperand::LargeConstant(98)];
 
-        two_op::o_20_add(&mut pc, &mut variables, operands);
+        two_op::o_20_add(&mut pc, &mut variables, operands).unwrap();
 
         // Ensure that the pc advanced one byte.
         assert_eq!(9, pc.current_pc());
@@ -493,7 +486,7 @@ mod test {
         let mut variables = TestVariables::new();
         let operands: [ZOperand; 2] = [ZOperand::LargeConstant(65530), ZOperand::SmallConstant(98)];
 
-        two_op::o_20_add(&mut pc, &mut variables, operands);
+        two_op::o_20_add(&mut pc, &mut variables, operands).unwrap();
 
         // Ensure that the pc advanced one byte.
         assert_eq!(9, pc.current_pc());
@@ -507,7 +500,7 @@ mod test {
             ZOperand::SmallConstant(0), // Stack
             ZOperand::LargeConstant(45),
         ];
-        two_op::o_13_store(&mut variables, operands);
+        two_op::o_13_store(&mut variables, operands).unwrap();
 
         assert_eq!(45, variables.variables[&ZVariable::Stack]);
     }
@@ -515,7 +508,7 @@ mod test {
     #[test]
     fn test_storew() {
         let mut variables = TestVariables::new();
-        let mut mem_h = new_handle(TestMemory::new(1000));
+        let mem_h = new_handle(TestMemory::new(1000));
         let operands: [ZOperand; 4] = [
             ZOperand::SmallConstant(234),
             ZOperand::SmallConstant(5),
@@ -523,7 +516,7 @@ mod test {
             ZOperand::Omitted,
         ];
 
-        var_op::o_225_storew(&mem_h, &mut variables, operands);
+        var_op::o_225_storew(&mem_h, &mut variables, operands).unwrap();
 
         assert_eq!(0xab, mem_h.borrow().bytes[244]);
         assert_eq!(0xcd, mem_h.borrow().bytes[245]);

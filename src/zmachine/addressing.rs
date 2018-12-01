@@ -2,7 +2,6 @@ use std::fmt;
 
 use super::handle::Handle;
 use super::traits::{Memory, PC};
-use super::version::ZVersion;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ZOffset(usize);
@@ -146,6 +145,7 @@ mod test {
     use super::*;
     use zmachine::fixtures::TestMemory;
     use zmachine::handle::new_handle;
+    use zmachine::version::ZVersion;
 
     #[test]
     fn test_zoffset() {

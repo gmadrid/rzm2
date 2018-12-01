@@ -6,8 +6,12 @@ pub type Result<T> = result::Result<T, ZErr>;
 
 #[derive(Debug)]
 pub enum ZErr {
+    BadVariableIndex(&'static str, u8),
+    MissingOperand,
     UnknownVersionNumber(u8),
     WriteViolation(usize),
+
+    GenericError(&'static str),
 
     IO(io::Error),
 }
@@ -32,6 +36,9 @@ impl fmt::Display for ZErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::ZErr::*;
         match *self {
+            BadVariableIndex(msg, index) => write!(f, "Bad {} variable index: {}", msg, index),
+            GenericError(msg) => write!(f, "Generic error: {}", msg),
+            MissingOperand => write!(f, "Missing operand."),
             UnknownVersionNumber(vers) => write!(f, "Unknown version number: '{}'", vers),
             WriteViolation(offset) => write!(
                 f,

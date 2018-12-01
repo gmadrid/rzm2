@@ -133,7 +133,7 @@ pub trait Stack {
 pub trait Variables {
     // NOTE: read_variable requires a 'mut' self because reading from the Stack
     // causes a mutation.
-    fn read_variable(&mut self, var: ZVariable) -> u16;
+    fn read_variable(&mut self, var: ZVariable) -> Result<u16>;
 
     // TODO: range check variable sub-values. (MAX_LOCAL, MAX_GLOBAL)
     fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()>;
@@ -224,13 +224,13 @@ mod test {
 
     #[test]
     fn test_memory_default_implementations() {
-        let mut arr = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        let arr = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
         let mut memory = TestMemory { val: arr };
 
         assert_eq!(0x0405, memory.read_word(ByteAddress::from_raw(1)));
         assert_eq!(0x1011, memory.read_word(ByteAddress::from_raw(13)));
 
-        memory.write_word(ByteAddress::from_raw(1), 0x89ab);
+        memory.write_word(ByteAddress::from_raw(1), 0x89ab).unwrap();
 
         // now: [3, 0x89, 0xab, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
         assert_eq!(0x0389, memory.read_word(ByteAddress::from_raw(0)));
@@ -260,16 +260,16 @@ mod test {
             panic!("unimplemented")
         }
 
-        fn read_local(&self, l: u8) -> u16 {
+        fn read_local(&self, _l: u8) -> u16 {
             0
         }
-        fn write_local(&mut self, l: u8, val: u16) {}
+        fn write_local(&mut self, _l: u8, _val: u16) {}
         fn push_frame(
             &mut self,
-            return_pc: usize,
-            num_locals: u8,
-            return_var: ZVariable,
-            operands: &[u16],
+            _return_pc: usize,
+            _num_locals: u8,
+            _return_var: ZVariable,
+            _operands: &[u16],
         ) {
         }
     }
