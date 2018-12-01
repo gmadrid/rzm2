@@ -35,11 +35,11 @@ where
     }
 
     fn pop_stack(&self) -> Result<u16> {
-        Ok(self.stack_h.borrow_mut().pop_word())
+        self.stack_h.borrow_mut().pop_word()
     }
 
-    fn push_stack(&self, word: u16) {
-        self.stack_h.borrow_mut().push_word(word);
+    fn push_stack(&self, word: u16) -> Result<()> {
+        self.stack_h.borrow_mut().push_word(word)
     }
 
     fn check_local_range(&self, l: u8) -> Result<()> {
@@ -96,10 +96,7 @@ where
     fn write_variable(&mut self, var: ZVariable, val: u16) -> Result<()> {
         use self::ZVariable::*;
         match var {
-            Stack => {
-                self.push_stack(val);
-                Ok(())
-            }
+            Stack => self.push_stack(val),
             Local(l) => self.write_local(l, val),
             Global(g) => self.write_global(g, val),
         }

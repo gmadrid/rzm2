@@ -107,11 +107,12 @@ impl TestStack {
 }
 
 impl Stack for TestStack {
-    fn push_byte(&mut self, val: u8) {
+    fn push_byte(&mut self, val: u8) -> Result<()> {
         self.arr.push(val);
+        Ok(())
     }
-    fn pop_byte(&mut self) -> u8 {
-        self.arr.pop().unwrap()
+    fn pop_byte(&mut self) -> Result<u8> {
+        self.arr.pop().ok_or(ZErr::StackUnderflow("Underflow in TestStack"))
     }
 
     fn read_local(&self, l: u8) -> Result<u16> {

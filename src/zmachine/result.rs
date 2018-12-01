@@ -9,6 +9,7 @@ pub enum ZErr {
     BadVariableIndex(&'static str, u8),
     LocalOutOfRange(u8, u8), // Requested local, num_locals.
     MissingOperand,
+    StackOverflow(&'static str),
     StackUnderflow(&'static str),
     UnknownVersionNumber(u8),
     WriteViolation(usize),
@@ -46,6 +47,7 @@ impl fmt::Display for ZErr {
                 req, num
             ),
             MissingOperand => write!(f, "Missing operand."),
+            StackOverflow(msg) => write!(f, "Stack overflow: {}", msg),
             StackUnderflow(msg) => write!(f, "Stack underflow: {}", msg),
             UnknownVersionNumber(vers) => write!(f, "Unknown version number: '{}'", vers),
             WriteViolation(offset) => write!(

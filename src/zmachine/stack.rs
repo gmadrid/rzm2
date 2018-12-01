@@ -43,22 +43,27 @@ impl ZStack {
             sp: 0,
         };
 
-        //
-        // Create a pseudo-frame for the base frame.
-        //
-
-        // There is not previous frame, so point to an illegal value.
-        zs.push_word((constants::STACK_SIZE) as u16);
-        // There is no continuation, so push zero.
-        zs.push_addr(0);
-        // No return variable, so just push Global 0xef.
-        zs.push_byte(u8::from(ZVariable::Global(0xef)));
-        // There are no locals.
-        zs.push_byte(0);
+        // If this fails, it is programmer error.
+        zs.init_new_stack().unwrap();
 
         zs.s0 = zs.sp;
 
         zs
+    }
+
+        //
+        // Create a pseudo-frame for the base frame.
+        //
+    fn init_new_stack(&mut self) -> Result<()> {
+
+        // There is not previous frame, so point to an illegal value.
+        self.push_word((constants::STACK_SIZE) as u16)?;
+        // There is no continuation, so push zero.
+        self.push_addr(0)?;
+        // No return variable, so just push Global 0xef.
+        self.push_byte(u8::from(ZVariable::Global(0xef)))?;
+        // There are no locals.
+        self.push_byte(0)
     }
 
     pub fn saved_fp(&self) -> usize {
@@ -72,22 +77,32 @@ impl ZStack {
         bytes::byte_from_slice(&self.stack, self.fp + ZStack::NUM_LOCALS_OFFSET).into()
     }
 
-    fn push_addr(&mut self, addr: usize) {
+    fn push_addr(&mut self, addr: usize) -> Result<()> {
         // This should probably be a ZOffset.
-        self.push_word((addr >> 16 & 0xffff) as u16);
-        self.push_word((addr >> 0 & 0xffff) as u16);
+        self.push_word((addr >> 16 & 0xffff) as u16)?;
+        self.push_word((addr >> 0 & 0xffff) as u16)?;
+        Ok(())
     }
 }
 
 impl Stack for ZStack {
-    fn push_byte(&mut self, byte: u8) {
-        self.stack[self.sp] = byte;
-        self.sp += 1;
+    fn push_byte(&mut self, byte: u8) -> Result<()> {
+        if self.sp < constants::STACK_SIZE {
+            self.stack[self.sp] = byte;
+            self.sp += 1;
+            Ok(())
+        } else {
+            Err(ZErr::StackOverflow("Pushed bytes off end of stack."))
+        }
     }
 
-    fn pop_byte(&mut self) -> u8 {
-        self.sp -= 1;
-        self.stack[self.sp]
+    fn pop_byte(&mut self) -> Result<u8> {
+        if self.sp > 0 {
+            self.sp -= 1;
+            Ok(self.stack[self.sp])
+        } else {
+            Err(ZErr::StackUnderflow("Popped byte off empty stack."))
+        }
     }
 
     fn read_local(&self, l: u8) -> Result<u16> {
@@ -137,14 +152,14 @@ impl Stack for ZStack {
         // - set stack bottom to stack_next.
         let new_fp = self.sp;
         let old_fp = self.fp;
-        self.push_word(old_fp as u16);
+        self.push_word(old_fp as u16)?;
         self.fp = new_fp;
-        self.push_addr(return_pc);
+        self.push_addr(return_pc)?;
         // TODO: figure out that AsRef thing here.
-        self.push_byte(u8::from(return_var));
-        self.push_byte(num_locals);
+        self.push_byte(u8::from(return_var))?;
+        self.push_byte(num_locals)?;
         for _ in 0..num_locals {
-            self.push_word(0);
+            self.push_word(0)?;
         }
 
         for (idx, op) in operands.iter().enumerate() {
@@ -314,30 +329,30 @@ mod test {
         stack
             .push_frame(0xbabef00d, 5, ZVariable::Global(3), &[34, 38])
             .unwrap();
-        stack.push_word(34);
-        stack.push_word(4832);
-        stack.push_word(137);
+        stack.push_word(34).unwrap();
+        stack.push_word(4832).unwrap();
+        stack.push_word(137).unwrap();
 
         stack
             .push_frame(0x12345678, 7, ZVariable::Local(5), &[1, 3, 5])
             .unwrap();
-        stack.push_word(99);
-        stack.push_word(1293);
-        stack.push_word(44444);
-        stack.push_word(253);
+        stack.push_word(99).unwrap();
+        stack.push_word(1293).unwrap();
+        stack.push_word(44444).unwrap();
+        stack.push_word(253).unwrap();
 
-        assert_eq!(253, stack.pop_word());
-        assert_eq!(44444, stack.pop_word());
-        assert_eq!(1293, stack.pop_word());
-        assert_eq!(99, stack.pop_word());
+        assert_eq!(253, stack.pop_word().unwrap());
+        assert_eq!(44444, stack.pop_word().unwrap());
+        assert_eq!(1293, stack.pop_word().unwrap());
+        assert_eq!(99, stack.pop_word().unwrap());
 
         // TODO: test for underflow
 
         stack.pop_frame().unwrap();
 
-        assert_eq!(137, stack.pop_word());
-        assert_eq!(4832, stack.pop_word());
-        assert_eq!(34, stack.pop_word());
+        assert_eq!(137, stack.pop_word().unwrap());
+        assert_eq!(4832, stack.pop_word().unwrap());
+        assert_eq!(34, stack.pop_word().unwrap());
     }
 
     #[test]

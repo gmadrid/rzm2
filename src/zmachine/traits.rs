@@ -104,8 +104,8 @@ pub trait Memory {
 }
 
 pub trait Stack {
-    fn push_byte(&mut self, val: u8);
-    fn pop_byte(&mut self) -> u8;
+    fn push_byte(&mut self, val: u8) -> Result<()>;
+    fn pop_byte(&mut self) -> Result<u8>;
 
     fn read_local(&self, l: u8) -> Result<u16>;
     fn write_local(&mut self, l: u8, val: u16) -> Result<()>;
@@ -122,16 +122,17 @@ pub trait Stack {
     fn return_pc(&self) -> usize;
     fn return_variable(&self) -> ZVariable;
 
-    fn push_word(&mut self, word: u16) {
-        self.push_byte((word >> 8 & 0xff) as u8);
-        self.push_byte((word >> 0 & 0xff) as u8);
+    fn push_word(&mut self, word: u16) -> Result<()> {
+        self.push_byte((word >> 8 & 0xff) as u8)?;
+        self.push_byte((word >> 0 & 0xff) as u8)?;
+        Ok(())
     }
 
-    fn pop_word(&mut self) -> u16 {
-        let low_byte = u16::from(self.pop_byte());
-        let high_byte = u16::from(self.pop_byte());
+    fn pop_word(&mut self) -> Result<u16> {
+        let low_byte = u16::from(self.pop_byte()?);
+        let high_byte = u16::from(self.pop_byte()?);
 
-        (high_byte << 8) + low_byte
+        Ok((high_byte << 8) + low_byte)
     }
 }
 
@@ -148,6 +149,7 @@ pub trait Variables {
 mod test {
     use super::*;
     use zmachine::addressing::ByteAddress;
+    use zmachine::result::ZErr;
 
     #[test]
     fn test_bytes() {
@@ -250,11 +252,12 @@ mod test {
     }
 
     impl Stack for BareStack {
-        fn push_byte(&mut self, val: u8) {
+        fn push_byte(&mut self, val: u8) -> Result<()> {
             self.arr.push(val);
+            Ok(())
         }
-        fn pop_byte(&mut self) -> u8 {
-            self.arr.pop().unwrap()
+        fn pop_byte(&mut self) -> Result<u8> {
+            self.arr.pop().ok_or(ZErr::GenericError("Popping in BareStack"))
         }
 
         fn pop_frame(&mut self) -> Result<()> {
@@ -289,12 +292,12 @@ mod test {
     fn test_stack_default_implementations() {
         let mut stack = BareStack::default();
 
-        stack.push_byte(0x01);
-        stack.push_word(0x0203);
-        stack.push_byte(0x04);
+        stack.push_byte(0x01).unwrap();
+        stack.push_word(0x0203).unwrap();
+        stack.push_byte(0x04).unwrap();
 
-        assert_eq!(0x0304, stack.pop_word());
-        assert_eq!(0x02, stack.pop_byte());
-        assert_eq!(0x01, stack.pop_byte());
+        assert_eq!(0x0304, stack.pop_word().unwrap());
+        assert_eq!(0x02, stack.pop_byte().unwrap());
+        assert_eq!(0x01, stack.pop_byte().unwrap());
     }
 }
