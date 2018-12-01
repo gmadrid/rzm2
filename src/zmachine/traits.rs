@@ -257,7 +257,9 @@ mod test {
             Ok(())
         }
         fn pop_byte(&mut self) -> Result<u8> {
-            self.arr.pop().ok_or(ZErr::GenericError("Popping in BareStack"))
+            self.arr
+                .pop()
+                .ok_or(ZErr::GenericError("Popping in BareStack"))
         }
 
         fn pop_frame(&mut self) -> Result<()> {

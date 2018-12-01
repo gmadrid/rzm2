@@ -51,11 +51,10 @@ impl ZStack {
         zs
     }
 
-        //
-        // Create a pseudo-frame for the base frame.
-        //
+    //
+    // Create a pseudo-frame for the base frame.
+    //
     fn init_new_stack(&mut self) -> Result<()> {
-
         // There is not previous frame, so point to an illegal value.
         self.push_word((constants::STACK_SIZE) as u16)?;
         // There is no continuation, so push zero.
@@ -97,7 +96,7 @@ impl Stack for ZStack {
     }
 
     fn pop_byte(&mut self) -> Result<u8> {
-        if self.sp > 0 {
+        if self.sp > self.s0 {
             self.sp -= 1;
             Ok(self.stack[self.sp])
         } else {
@@ -190,9 +189,9 @@ impl Stack for ZStack {
         self.sp = old_fp;
         let saved_fp = self.saved_fp();
         self.fp = saved_fp;
-        // TODO: make sure you haven't underflowed.
 
-        // What is s0 right now?
+        self.s0 = self.fp + ZStack::LOCAL_VAR_OFFSET + 2 * usize::from(self.num_locals());
+
         Ok(())
     }
 }
@@ -362,6 +361,71 @@ mod test {
         match stack.pop_frame() {
             Err(ZErr::StackUnderflow(_)) => {}
             _ => panic!("Missing error"),
+        }
+    }
+
+    #[test]
+    fn test_stack_frame_overflow() {
+        let mut stack = ZStack::new();
+
+        // 42 stack frames is as many as fit on the current sized frame.
+        for _ in 0..42 {
+            stack.push_frame(0x1000, 8, ZVariable::Stack, &[]).unwrap();
+        }
+
+        match stack.push_frame(0x2000, 8, ZVariable::Stack, &[]) {
+            Err(ZErr::StackOverflow(_)) => {}
+            Err(e) => panic!("Wrong error: {:?}", e),
+            Ok(_) => panic!("Missing error"),
+        }
+    }
+
+    #[test]
+    fn test_stack_overflow() {
+        let mut stack = ZStack::new();
+
+        // 42 stack frames is as many as fit on the current sized frame.
+        for _ in 0..42 {
+            stack.push_frame(0x1000, 8, ZVariable::Stack, &[]).unwrap();
+        }
+
+        // Then, we can fit 4 more words.
+        stack.push_word(3).unwrap();
+        stack.push_word(4).unwrap();
+        stack.push_word(5).unwrap();
+        stack.push_word(6).unwrap();
+
+        match stack.push_word(7) {
+            Err(ZErr::StackOverflow(_)) => {}
+            Err(e) => panic!("Wrong error: {:?}", e),
+            Ok(_) => panic!("Missing error"),
+        }
+    }
+
+    #[test]
+    fn test_stack_underflow_after_popping_frame() {
+        let mut stack = ZStack::new();
+
+        stack.push_word(4).unwrap();
+        stack.push_word(4).unwrap();
+
+        let old_s0 = stack.s0;
+        assert_eq!(stack.sp, stack.s0 + 4);
+
+        stack
+            .push_frame(0xabcdef00, 4, ZVariable::Stack, &[])
+            .unwrap();
+        stack.pop_frame().unwrap();
+
+        assert_eq!(old_s0, stack.s0);
+
+        stack.pop_word().unwrap();
+        stack.pop_word().unwrap();
+
+        match stack.pop_byte() {
+            Err(ZErr::StackUnderflow(_)) => {}
+            Err(e) => panic!("Wrong error: {:?}", e),
+            Ok(_) => panic!("Missing error"),
         }
     }
 }

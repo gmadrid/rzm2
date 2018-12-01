@@ -112,7 +112,9 @@ impl Stack for TestStack {
         Ok(())
     }
     fn pop_byte(&mut self) -> Result<u8> {
-        self.arr.pop().ok_or(ZErr::StackUnderflow("Underflow in TestStack"))
+        self.arr
+            .pop()
+            .ok_or(ZErr::StackUnderflow("Underflow in TestStack"))
     }
 
     fn read_local(&self, l: u8) -> Result<u16> {
