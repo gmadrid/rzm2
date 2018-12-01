@@ -116,12 +116,16 @@ impl Stack for ZStack {
     }
 
     fn write_local(&mut self, l: u8, val: u16) -> Result<()> {
-        bytes::word_to_slice(
-            &mut self.stack,
-            self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
-            val,
-        );
-        Ok(())
+        if l < self.num_locals() {
+            bytes::word_to_slice(
+                &mut self.stack,
+                self.fp + ZStack::LOCAL_VAR_OFFSET + usize::from(l) * 2,
+                val,
+            );
+            Ok(())
+        } else {
+            Err(ZErr::LocalOutOfRange(l, self.num_locals()))
+        }
     }
 
     fn return_pc(&self) -> usize {
@@ -424,6 +428,37 @@ mod test {
 
         match stack.pop_byte() {
             Err(ZErr::StackUnderflow(_)) => {}
+            Err(e) => panic!("Wrong error: {:?}", e),
+            Ok(_) => panic!("Missing error"),
+        }
+    }
+
+    #[test]
+    fn test_read_write_local() {
+        let mut stack = ZStack::new();
+
+        stack
+            .push_frame(0x12213443, 4, ZVariable::Stack, &[])
+            .unwrap();
+
+        stack.write_local(0, 0x11).unwrap();
+        stack.write_local(1, 0x22).unwrap();
+        stack.write_local(2, 0x33).unwrap();
+        stack.write_local(3, 0x44).unwrap();
+
+        match stack.write_local(4, 0x55) {
+            Err(ZErr::LocalOutOfRange(_, _)) => {}
+            Err(e) => panic!("Wrong error: {:?}", e),
+            Ok(_) => panic!("Missing error"),
+        }
+
+        assert_eq!(0x11, stack.read_local(0).unwrap());
+        assert_eq!(0x22, stack.read_local(1).unwrap());
+        assert_eq!(0x33, stack.read_local(2).unwrap());
+        assert_eq!(0x44, stack.read_local(3).unwrap());
+
+        match stack.read_local(4) {
+            Err(ZErr::LocalOutOfRange(_, _)) => {}
             Err(e) => panic!("Wrong error: {:?}", e),
             Ok(_) => panic!("Missing error"),
         }
