@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use std::io::Read;
 
 use super::addressing::ZPC;
