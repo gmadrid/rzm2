@@ -1,5 +1,3 @@
-// UNREVIEWED
-
 use super::constants;
 use super::opcode::ZVariable;
 use super::result::{Result, ZErr};
