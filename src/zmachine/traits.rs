@@ -4,6 +4,8 @@ use super::result::Result;
 use super::version::ZVersion;
 
 pub mod bytes {
+    // TODO: range check all of this.
+    
     #[inline]
     pub fn byte_from_slice(slice: &[u8], idx: usize) -> u8 {
         slice[idx]
@@ -14,6 +16,7 @@ pub mod bytes {
         slice[idx] = val;
     }
 
+    #[inline]
     pub fn word_from_slice(slice: &[u8], idx: usize) -> u16 {
         // big-endian
         let high_byte = u16::from(byte_from_slice(slice, idx));
@@ -22,6 +25,7 @@ pub mod bytes {
         (high_byte << 8) + low_byte
     }
 
+    #[inline]
     pub fn word_to_slice(slice: &mut [u8], idx: usize, val: u16) {
         let high_byte = ((val >> 8) & 0xff) as u8;
         let low_byte = (val & 0xff) as u8;
@@ -31,6 +35,7 @@ pub mod bytes {
         byte_to_slice(slice, idx + 1, low_byte);
     }
 
+    #[inline]
     pub fn long_word_from_slice(slice: &[u8], idx: usize) -> u32 {
         // big-endian
         let byte_3 = u32::from(byte_from_slice(slice, idx));
@@ -102,8 +107,8 @@ pub trait Stack {
     fn push_byte(&mut self, val: u8);
     fn pop_byte(&mut self) -> u8;
 
-    fn read_local(&self, l: u8) -> u16;
-    fn write_local(&mut self, l: u8, val: u16);
+    fn read_local(&self, l: u8) -> Result<u16>;
+    fn write_local(&mut self, l: u8, val: u16) -> Result<()>;
 
     fn push_frame(
         &mut self,
@@ -111,7 +116,7 @@ pub trait Stack {
         num_locals: u8,
         return_var: ZVariable,
         operands: &[u16],
-    );
+    ) -> Result<()>;
     fn pop_frame(&mut self);
 
     fn return_pc(&self) -> usize;
@@ -260,17 +265,21 @@ mod test {
             panic!("unimplemented")
         }
 
-        fn read_local(&self, _l: u8) -> u16 {
-            0
+        fn read_local(&self, _l: u8) -> Result<u16> {
+            Ok(0)
         }
-        fn write_local(&mut self, _l: u8, _val: u16) {}
+        fn write_local(&mut self, _l: u8, _val: u16) -> Result<()> {
+            Ok(())
+        }
+
         fn push_frame(
             &mut self,
             _return_pc: usize,
             _num_locals: u8,
             _return_var: ZVariable,
             _operands: &[u16],
-        ) {
+        ) -> Result<()> {
+            Ok(())
         }
     }
 

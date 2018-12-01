@@ -113,16 +113,18 @@ impl Stack for TestStack {
         self.arr.pop().unwrap()
     }
 
-    fn read_local(&self, l: u8) -> u16 {
-        if self.map.contains_key(&l) {
+    fn read_local(&self, l: u8) -> Result<u16> {
+        let value = if self.map.contains_key(&l) {
             self.map[&l]
         } else {
             0
-        }
+        };
+        Ok(value)
     }
 
-    fn write_local(&mut self, l: u8, val: u16) {
+    fn write_local(&mut self, l: u8, val: u16) -> Result<()> {
         self.map.insert(l, val);
+        Ok(())
     }
 
     fn push_frame(
@@ -131,7 +133,7 @@ impl Stack for TestStack {
         _num_locals: u8,
         _return_var: ZVariable,
         _operands: &[u16],
-    ) {
+    ) -> Result<()> {
         panic!("unimplemented");
     }
 

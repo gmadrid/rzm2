@@ -7,6 +7,7 @@ pub type Result<T> = result::Result<T, ZErr>;
 #[derive(Debug)]
 pub enum ZErr {
     BadVariableIndex(&'static str, u8),
+    LocalOutOfRange(u8, u8), // Requested local, num_locals.
     MissingOperand,
     UnknownVersionNumber(u8),
     WriteViolation(usize),
@@ -38,6 +39,11 @@ impl fmt::Display for ZErr {
         match *self {
             BadVariableIndex(msg, index) => write!(f, "Bad {} variable index: {}", msg, index),
             GenericError(msg) => write!(f, "Generic error: {}", msg),
+            LocalOutOfRange(req, num) => write!(
+                f,
+                "Requested local at index {}, but only {} locals available in frame.",
+                req, num
+            ),
             MissingOperand => write!(f, "Missing operand."),
             UnknownVersionNumber(vers) => write!(f, "Unknown version number: '{}'", vers),
             WriteViolation(offset) => write!(

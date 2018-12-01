@@ -404,7 +404,7 @@ pub mod var_op {
 
         stack
             .borrow_mut()
-            .push_frame(return_pc, num_locals, store.into(), &local_values);
+            .push_frame(return_pc, num_locals, store.into(), &local_values)?;
 
         // TODO: do you ever push the arguments? I think you're not.
         // TODO: something is not right about the interaction between the routine header

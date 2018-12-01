@@ -51,13 +51,12 @@ where
 
     fn read_local(&self, l: u8) -> Result<u16> {
         self.check_local_range(l)?;
-        Ok(self.stack_h.borrow().read_local(l))
+        self.stack_h.borrow().read_local(l)
     }
 
     fn write_local(&self, l: u8, word: u16) -> Result<()> {
         self.check_local_range(l)?;
-        self.stack_h.borrow_mut().write_local(l, word);
-        Ok(())
+        self.stack_h.borrow_mut().write_local(l, word)
     }
 
     fn check_global_range(&self, g: u8) -> Result<()> {
