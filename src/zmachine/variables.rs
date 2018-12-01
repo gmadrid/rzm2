@@ -100,9 +100,7 @@ where
                 self.push_stack(val);
                 Ok(())
             }
-            Local(l) => {
-                self.write_local(l, val)
-            }
+            Local(l) => self.write_local(l, val),
             Global(g) => self.write_global(g, val),
         }
     }
@@ -149,11 +147,26 @@ mod test {
             .write_variable(ZVariable::Local(7), 0xabcd)
             .unwrap();
 
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Local(3)).unwrap());
-        assert_eq!(0x4677, variables.read_variable(ZVariable::Local(5)).unwrap());
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Local(3)).unwrap());
-        assert_eq!(0xabcd, variables.read_variable(ZVariable::Local(7)).unwrap());
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Local(3)).unwrap());
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Local(3)).unwrap()
+        );
+        assert_eq!(
+            0x4677,
+            variables.read_variable(ZVariable::Local(5)).unwrap()
+        );
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Local(3)).unwrap()
+        );
+        assert_eq!(
+            0xabcd,
+            variables.read_variable(ZVariable::Local(7)).unwrap()
+        );
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Local(3)).unwrap()
+        );
     }
 
     #[test]
@@ -170,10 +183,25 @@ mod test {
             .write_variable(ZVariable::Global(7), 0xabcd)
             .unwrap();
 
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Global(3)).unwrap());
-        assert_eq!(0x4677, variables.read_variable(ZVariable::Global(5)).unwrap());
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Global(3)).unwrap());
-        assert_eq!(0xabcd, variables.read_variable(ZVariable::Global(7)).unwrap());
-        assert_eq!(0x3579, variables.read_variable(ZVariable::Global(3)).unwrap());
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Global(3)).unwrap()
+        );
+        assert_eq!(
+            0x4677,
+            variables.read_variable(ZVariable::Global(5)).unwrap()
+        );
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Global(3)).unwrap()
+        );
+        assert_eq!(
+            0xabcd,
+            variables.read_variable(ZVariable::Global(7)).unwrap()
+        );
+        assert_eq!(
+            0x3579,
+            variables.read_variable(ZVariable::Global(3)).unwrap()
+        );
     }
 }

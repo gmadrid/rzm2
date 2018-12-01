@@ -159,12 +159,18 @@ impl Stack for ZStack {
         Ok(())
     }
 
-    fn pop_frame(&mut self) {
+    fn pop_frame(&mut self) -> Result<()> {
         // Steps:
         // - Remember current fp (call it old_fp).
         // - Set fp to value from frame.
         // - Set sp to old_fp.
         // - Compute new value of s0.
+
+        // Check for underflow.
+        if self.saved_fp() >= constants::STACK_SIZE {
+            return Err(ZErr::StackUnderflow("Popped top stack frame."));
+        }
+
         let old_fp = self.fp;
         self.sp = old_fp;
         let saved_fp = self.saved_fp();
@@ -172,6 +178,7 @@ impl Stack for ZStack {
         // TODO: make sure you haven't underflowed.
 
         // What is s0 right now?
+        Ok(())
     }
 }
 
@@ -285,7 +292,7 @@ mod test {
         assert_eq!(0, stack.read_local(5).unwrap());
         assert_eq!(0, stack.read_local(6).unwrap());
 
-        stack.pop_frame();
+        stack.pop_frame().unwrap();
 
         assert_eq!(saved_fp1, stack.saved_fp());
         assert_eq!(0xbabef00d, stack.return_pc());
@@ -297,7 +304,7 @@ mod test {
         assert_eq!(0, stack.read_local(3).unwrap());
         assert_eq!(0, stack.read_local(4).unwrap());
 
-        stack.pop_frame();
+        stack.pop_frame().unwrap();
     }
 
     #[test]
@@ -326,10 +333,20 @@ mod test {
 
         // TODO: test for underflow
 
-        stack.pop_frame();
+        stack.pop_frame().unwrap();
 
         assert_eq!(137, stack.pop_word());
         assert_eq!(4832, stack.pop_word());
         assert_eq!(34, stack.pop_word());
+    }
+
+    #[test]
+    fn test_pop_missing_stack_frame() {
+        let mut stack = ZStack::new();
+
+        match stack.pop_frame() {
+            Err(ZErr::StackUnderflow(_)) => {}
+            _ => panic!("Missing error"),
+        }
     }
 }

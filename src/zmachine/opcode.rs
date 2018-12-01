@@ -203,7 +203,12 @@ pub mod one_op {
 
     // ZSpec: 1OP:139 0x0b ret value
     // UNTESTED
-    pub fn o_139_ret<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V, operand: ZOperand) -> Result<()>
+    pub fn o_139_ret<P, S, V>(
+        pc: &mut P,
+        stack: &Handle<S>,
+        variables: &mut V,
+        operand: ZOperand,
+    ) -> Result<()>
     where
         P: PC,
         S: Stack,
@@ -212,7 +217,7 @@ pub mod one_op {
         let result = operand.value(variables)?;
         let return_pc = stack.borrow().return_pc();
         let return_variable = stack.borrow().return_variable();
-        stack.borrow_mut().pop_frame();
+        stack.borrow_mut().pop_frame()?;
         variables.write_variable(return_variable, result)?;
         debug!("ret         {}", operand);
         pc.set_current_pc(return_pc);
@@ -379,7 +384,8 @@ pub mod var_op {
         variables: &mut V,
         version: ZVersion,
         operands: [ZOperand; 4],
-    ) -> Result<()> where
+    ) -> Result<()>
+    where
         P: PC,
         S: Stack,
         V: Variables,

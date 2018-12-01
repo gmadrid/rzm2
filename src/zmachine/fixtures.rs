@@ -46,7 +46,8 @@ impl TestVariables {
 
 impl Variables for TestVariables {
     fn read_variable(&mut self, var: ZVariable) -> Result<u16> {
-        self.variables.get(&var)
+        self.variables
+            .get(&var)
             .map(|v| *v)
             .ok_or(ZErr::GenericError("Variable missing"))
     }
@@ -137,7 +138,9 @@ impl Stack for TestStack {
         panic!("unimplemented");
     }
 
-    fn pop_frame(&mut self) {}
+    fn pop_frame(&mut self) -> Result<()> {
+        Ok(())
+    }
     fn return_pc(&self) -> usize {
         panic!("unimplemented")
     }

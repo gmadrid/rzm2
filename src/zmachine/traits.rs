@@ -5,7 +5,7 @@ use super::version::ZVersion;
 
 pub mod bytes {
     // TODO: range check all of this.
-    
+
     #[inline]
     pub fn byte_from_slice(slice: &[u8], idx: usize) -> u8 {
         slice[idx]
@@ -117,7 +117,7 @@ pub trait Stack {
         return_var: ZVariable,
         operands: &[u16],
     ) -> Result<()>;
-    fn pop_frame(&mut self);
+    fn pop_frame(&mut self) -> Result<()>;
 
     fn return_pc(&self) -> usize;
     fn return_variable(&self) -> ZVariable;
@@ -257,7 +257,9 @@ mod test {
             self.arr.pop().unwrap()
         }
 
-        fn pop_frame(&mut self) {}
+        fn pop_frame(&mut self) -> Result<()> {
+            Ok(())
+        }
         fn return_pc(&self) -> usize {
             panic!("unimplemented")
         }

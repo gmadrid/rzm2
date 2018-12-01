@@ -92,12 +92,8 @@ where
         } else {
             match opcode {
                 0 => one_op::o_128_jz(&mut self.pc, &mut self.variables, operand).to_true(),
-                11 => one_op::o_139_ret(
-                    &mut self.pc,
-                    &self.stack,
-                    &mut self.variables,
-                    operand,
-                ).to_true(),
+                11 => one_op::o_139_ret(&mut self.pc, &self.stack, &mut self.variables, operand)
+                    .to_true(),
                 _ => self.unimplemented("1op", opcode),
             }
         }
