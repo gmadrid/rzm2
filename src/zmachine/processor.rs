@@ -80,6 +80,10 @@ where
 
         if let ZOperand::Omitted = operand {
             match opcode {
+                2 => {
+                    zero_op::o_178_print(&self.memory, &mut self.pc, self.header.abbrev_location())
+                        .to_true()
+                }
                 11 => call_null(zero_op::o_187_new_line()),
                 _ => self.unimplemented("0op", opcode),
             }

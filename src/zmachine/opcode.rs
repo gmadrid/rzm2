@@ -9,6 +9,7 @@ use super::handle::Handle;
 use super::result::{Result, ZErr};
 use super::traits::{Memory, Stack, Variables, PC};
 use super::version::ZVersion;
+use super::zscii::read_zstr_from_pc;
 
 // Each (non-extended) opcode indicates its type (Short, Long, Var) with the top two bits.
 pub const OPCODE_TYPE_MASK: u8 = 0b1100_0000;
@@ -167,6 +168,24 @@ impl fmt::Display for ZVariable {
 
 pub mod zero_op {
     use super::*;
+
+    // ZSpec: 0OP:178 0x02 print (literal-string)
+    // UNTESTED
+    pub fn o_178_print<M, P>(
+        memory: &Handle<M>,
+        pc: &mut P,
+        abbrev_offset: ByteAddress,
+    ) -> Result<()>
+    where
+        M: Memory,
+        P: PC,
+    {
+        // TODO: This is not acceptible in a world with multiple output streams.
+        debug!("print");
+        let zstr = read_zstr_from_pc(&memory, abbrev_offset, pc)?;
+        println!("{}", zstr);
+        Ok(())
+    }
 
     // ZSpec: 0OP:187 0x0B new_line
     // UNTESTED

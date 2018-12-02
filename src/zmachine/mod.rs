@@ -11,6 +11,7 @@ mod story;
 mod traits;
 mod variables;
 mod version;
+mod zscii;
 
 #[cfg(test)]
 mod fixtures;

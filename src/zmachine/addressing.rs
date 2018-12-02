@@ -122,6 +122,7 @@ where
         self.pc = new_pc;
     }
 
+    // TODO: this should check for overflow.
     fn next_byte(&mut self) -> u8 {
         // TODO: check range.
         let offset = ZOffset(self.pc);
