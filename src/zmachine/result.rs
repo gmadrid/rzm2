@@ -50,8 +50,7 @@ impl fmt::Display for ZErr {
             MissingOperand => write!(f, "Missing operand."),
             StackOverflow(msg) => write!(f, "Stack overflow: {}", msg),
             StackUnderflow(msg) => write!(f, "Stack underflow: {}", msg),
-            UnknownOpcode(msg, opcode) =>
-                write!(f, "Unknown {} opcode: 0x{:02x}", msg, opcode),
+            UnknownOpcode(msg, opcode) => write!(f, "Unknown {} opcode: 0x{:02x}", msg, opcode),
             UnknownVersionNumber(vers) => write!(f, "Unknown version number: '{}'", vers),
             WriteViolation(offset) => write!(
                 f,

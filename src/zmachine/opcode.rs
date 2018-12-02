@@ -317,10 +317,33 @@ pub mod two_op {
         V: Variables,
     {
         let variable = ZVariable::from(operands[0]);
-        debug!("store       {} {}             XXX", variable, operands[1]);
+        debug!("store       {} {}", variable, operands[1]);
 
         let value = operands[1].value(variables)?;
         variables.write_variable(variable, value)
+    }
+
+    // ZSpec: 2OP:15 0x0f loadw array word-index -> (result)
+    pub fn o_15_loadw<M, P, V>(
+        memory: &Handle<M>,
+        pc: &mut P,
+        variables: &mut V,
+        operands: [ZOperand; 2],
+    ) -> Result<()>
+    where
+        M: Memory,
+        P: PC,
+        V: Variables,
+    {
+        let store = ZVariable::from(pc.next_byte());
+        debug!("loadw     {} {} -> {}", operands[0], operands[1], store);
+
+        let array = operands[0].value(variables)?;
+        let word_index = operands[1].value(variables)?;
+
+        let byte_address = ByteAddress::from_raw(array).inc_by(2 * word_index);
+        let value = memory.borrow().read_word(byte_address);
+        variables.write_variable(store, value)
     }
 
     // ZSpec: 2OP:20 0x14 add a b -> (result)
@@ -332,7 +355,7 @@ pub mod two_op {
         let store = pc.next_byte();
         let variable = ZVariable::from(store);
         debug!(
-            "add         {} {} -> {}       XXX",
+            "add         {} {} -> {}",
             operands[0], operands[1], variable
         );
 
@@ -357,7 +380,7 @@ pub mod two_op {
         let store = pc.next_byte();
         let variable = ZVariable::from(store);
         debug!(
-            "sub         {} {} -> {}       XXX",
+            "sub         {} {} -> {}",
             operands[0], operands[1], variable
         );
 
@@ -418,7 +441,7 @@ pub mod var_op {
 
         // TODO: print operand[0] as a PackedAddress.
         debug!(
-            "call        {} {} {} {} -> {}      XXX",
+            "call        {} {} {} {} -> {}",
             packed, operands[1], operands[2], operands[3], store
         );
         Ok(())
@@ -435,7 +458,7 @@ pub mod var_op {
         V: Variables,
     {
         debug!(
-            "storew      {} {} {} {}             XXX",
+            "storew      {} {} {} {}",
             operands[0], operands[1], operands[2], operands[3]
         );
 

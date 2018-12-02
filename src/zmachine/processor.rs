@@ -49,7 +49,7 @@ where
 
     pub fn run(&mut self) -> Result<()> {
         while self.execute_opcode()? {}
-        return Ok(())
+        return Ok(());
     }
 
     // Result indicates whether or not we should continue.
@@ -148,6 +148,12 @@ where
             0x01 => two_op::o_1_je(&mut self.pc, &mut self.variables, operands).to_true(),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => two_op::o_13_store(&mut self.variables, operands).to_true(),
+            0x0f => two_op::o_15_loadw(
+                &mut self.memory,
+                &mut self.pc,
+                &mut self.variables,
+                operands,
+            ).to_true(),
             0x14 => two_op::o_20_add(&mut self.pc, &mut self.variables, operands).to_true(),
             0x15 => two_op::o_21_sub(&mut self.pc, &mut self.variables, operands).to_true(),
             _ => self.unimplemented("long", opcode),
