@@ -1,12 +1,10 @@
-// UNREVIEWED
-
 use super::handle::Handle;
 use super::opcode::{one_op, two_op, var_op, zero_op};
+use super::opcode::{ZOperand, ZOperandType};
 use super::opcode::{
-    ZOperand, ZOperandType, EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK, SHORT_OPCODE_TYPE_MASK,
-    VAR_OPCODE_TYPE_MASK,
+    EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK, SHORT_OPCODE_TYPE_MASK, VAR_OPCODE_TYPE_MASK,
 };
-use super::result::{Result, ToTrue};
+use super::result::{Result, ToTrue, ZErr};
 use super::traits::{Header, Memory, Stack, Variables, PC};
 use super::version::ZVersion;
 
@@ -50,12 +48,8 @@ where
     }
 
     pub fn run(&mut self) -> Result<()> {
-        loop {
-            let cont = self.execute_opcode()?;
-            if !cont {
-                return Ok(());
-            }
-        }
+        while self.execute_opcode()? {}
+        return Ok(())
     }
 
     // Result indicates whether or not we should continue.
@@ -160,8 +154,8 @@ where
         }
     }
 
-    fn unimplemented(&self, msg: &str, byte: u8) -> Result<bool> {
-        panic!("Unimplemented {} opcode: {}", msg, byte);
+    fn unimplemented(&self, msg: &'static str, byte: u8) -> Result<bool> {
+        Err(ZErr::UnknownOpcode(msg, u16::from(byte)))
     }
 }
 
@@ -170,4 +164,6 @@ fn call_null(_n: ()) -> Result<bool> {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    // One day, you might want to figure out how to test this.
+}
