@@ -192,7 +192,7 @@ pub mod zero_op {
     pub fn o_187_new_line() {
         // TODO: This is not acceptible in a world with multiple output streams.
         println!("\n");
-        debug!("new_line                        XXX");
+        debug!("new_line");
     }
 }
 
@@ -209,7 +209,7 @@ pub mod one_op {
         let first_offset_byte = pc.next_byte();
         branch(first_offset_byte, pc, |offset, branch_on_truth| {
             debug!(
-                "jz          {} ?{}(x{:x})",
+                "jz         {} ?{}(x{:x})",
                 operand,
                 if branch_on_truth { "" } else { "~" },
                 offset
@@ -240,6 +240,20 @@ pub mod one_op {
         variables.write_variable(return_variable, result)?;
         debug!("ret         {}", operand);
         pc.set_current_pc(return_pc);
+        Ok(())
+    }
+
+    // ZSpec: 1OP:140 0x0c jump ?(label)
+    // UNTESTED
+    pub fn o_140_jump<P, V>(pc: &mut P, variables: &mut V, operand: ZOperand) -> Result<()>
+    where
+        P: PC,
+        V: Variables,
+    {
+        debug!("jump       {}", operand);
+
+        let offset = isize::from(operand.value(variables)? as i16) - 2;
+        pc.offset_pc(offset);
         Ok(())
     }
 }
@@ -328,14 +342,18 @@ pub mod two_op {
         let variable = ZVariable::from(operands[0].value(variables)? as u8);
         let first_offset_byte = pc.next_byte();
         branch(first_offset_byte, pc, |offset, branch_on_truth| {
-            debug!("inc_chk   {} {} ?{}({:x})", variable, operands[1],
-                   if branch_on_truth { "" } else { "~" },
-                   offset);
+            debug!(
+                "inc_chk    {} {} ?{}({:x})",
+                variable,
+                operands[1],
+                if branch_on_truth { "" } else { "~" },
+                offset
+            );
 
             let old_value = variables.read_variable(variable)?;
             let (result, overflow) = old_value.overflowing_add(1);
             if overflow {
-                warn!("inc_chk {} causes overflow.", variable);
+                warn!("inc_chk    {} causes overflow.", variable);
             }
             variables.write_variable(variable, result)?;
 
@@ -356,7 +374,7 @@ pub mod two_op {
         let lhs = operands[0].value(variables)?;
         let rhs = operands[1].value(variables)?;
 
-        debug!("and       {} {} -> {}", operands[0], operands[1], store);
+        debug!("and        {} {} -> {}", operands[0], operands[1], store);
 
         variables.write_variable(store, lhs & rhs)
     }
@@ -400,7 +418,7 @@ pub mod two_op {
         V: Variables,
     {
         let store = ZVariable::from(pc.next_byte());
-        debug!("loadw     {} {} -> {}", operands[0], operands[1], store);
+        debug!("loadw      {} {} -> {}", operands[0], operands[1], store);
 
         let array = operands[0].value(variables)?;
         let word_index = operands[1].value(variables)?;
@@ -424,7 +442,7 @@ pub mod two_op {
         V: Variables,
     {
         let store = ZVariable::from(pc.next_byte());
-        debug!("loadb     {} {} -> {}", operands[0], operands[1], store);
+        debug!("loadb      {} {} -> {}", operands[0], operands[1], store);
 
         let array = operands[0].value(variables)?;
         let byte_index = operands[1].value(variables)?;
@@ -486,8 +504,6 @@ pub mod two_op {
 
 pub mod var_op {
     use super::*;
-
-    //
 
     // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     // UNTESTED
@@ -569,6 +585,20 @@ pub mod var_op {
         );
     }
 
+    // ZSpec: VAR:229 0x05 print_char output_character_code
+    // UNTESTED
+    pub fn o_229_print_char<V>(variables: &mut V, operands: [ZOperand; 4]) -> Result<()>
+    where
+        V: Variables,
+    {
+        debug!("print_char {}", operands[0]);
+        // TODO: deal with the case where extra argements are passed.
+        //       stuff will break if an extra SP arg is passed, but never popped.
+        let ch = operands[0].value(variables)? as u8 as char;
+        print!("{}", ch);
+        Ok(())
+    }
+
     // ZSpec: VAR:230 0x06 print_num value
     // UNTESTED
     pub fn o_230_print_num<V>(variables: &mut V, operands: [ZOperand; 4]) -> Result<()>
@@ -576,7 +606,7 @@ pub mod var_op {
         V: Variables,
     {
         debug!(
-            "print_num   {} {} {} {}",
+            "print_num  {} {} {} {}",
             operands[0], operands[1], operands[2], operands[3]
         );
 

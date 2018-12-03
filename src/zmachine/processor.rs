@@ -89,9 +89,10 @@ where
             }
         } else {
             match opcode {
-                0 => one_op::o_128_jz(&mut self.pc, &mut self.variables, operand).to_true(),
-                11 => one_op::o_139_ret(&mut self.pc, &self.stack, &mut self.variables, operand)
+                0x00 => one_op::o_128_jz(&mut self.pc, &mut self.variables, operand).to_true(),
+                0x0b => one_op::o_139_ret(&mut self.pc, &self.stack, &mut self.variables, operand)
                     .to_true(),
+                0x0c => one_op::o_140_jump(&mut self.pc, &mut self.variables, operand).to_true(),
                 _ => self.unimplemented("1op", opcode),
             }
         }
@@ -127,6 +128,7 @@ where
             ).to_true(),
             1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
             3 => call_null(var_op::o_227_put_prop(operands)),
+            5 => var_op::o_229_print_char(&mut self.variables, operands).to_true(),
             6 => var_op::o_230_print_num(&mut self.variables, operands).to_true(),
             _ => panic!("Unimplemented var opcode: {}", opcode),
         }
