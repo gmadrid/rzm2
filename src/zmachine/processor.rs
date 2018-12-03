@@ -80,7 +80,12 @@ where
 
         if let ZOperand::Omitted = operand {
             match opcode {
-                0x00 => zero_op::o_176_rtrue(&mut self.pc, &self.stack, &mut self.variables).to_true(),
+                0x00 => {
+                    zero_op::o_176_rtrue(&mut self.pc, &self.stack, &mut self.variables).to_true()
+                }
+                0x01 => {
+                    zero_op::o_177_rfalse(&mut self.pc, &self.stack, &mut self.variables).to_true()
+                }
                 0x02 => {
                     zero_op::o_178_print(&self.memory, &mut self.pc, self.header.abbrev_location())
                         .to_true()
@@ -119,20 +124,20 @@ where
         if byte & 0b0010_0000 == 0 {
             self.match_long_opcode(opcode, [operands[0], operands[1]])
         } else {
-        match opcode {
-            0 => var_op::o_224_call(
-                &mut self.pc,
-                &self.stack,
-                &mut self.variables,
-                self.header.version_number(),
-                operands,
-            ).to_true(),
-            1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
-            3 => call_null(var_op::o_227_put_prop(operands)),
-            5 => var_op::o_229_print_char(&mut self.variables, operands).to_true(),
-            6 => var_op::o_230_print_num(&mut self.variables, operands).to_true(),
-            _ => panic!("Unimplemented var opcode: {}", opcode),
-        }
+            match opcode {
+                0 => var_op::o_224_call(
+                    &mut self.pc,
+                    &self.stack,
+                    &mut self.variables,
+                    self.header.version_number(),
+                    operands,
+                ).to_true(),
+                1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
+                3 => call_null(var_op::o_227_put_prop(operands)),
+                5 => var_op::o_229_print_char(&mut self.variables, operands).to_true(),
+                6 => var_op::o_230_print_num(&mut self.variables, operands).to_true(),
+                _ => self.unimplemented("var", opcode),
+            }
         }
     }
 

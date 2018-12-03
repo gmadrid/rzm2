@@ -200,6 +200,18 @@ pub mod zero_op {
         return_value(1, pc, stack, variables)
     }
 
+    // ZSpec: 0OP:177 0x01 rfalse
+    // UNTESTED
+    pub fn o_177_rfalse<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V) -> Result<()>
+    where
+        P: PC,
+        S: Stack,
+        V: Variables,
+    {
+        debug!("rfalse");
+        return_value(0, pc, stack, variables)
+    }
+
     // ZSpec: 0OP:178 0x02 print (literal-string)
     // UNTESTED
     pub fn o_178_print<M, P>(
