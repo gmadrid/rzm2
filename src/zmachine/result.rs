@@ -9,6 +9,7 @@ pub enum ZErr {
     BadVariableIndex(&'static str, u8),
     LocalOutOfRange(u8, u8), // Requested local, num_locals.
     MissingOperand,
+    NullObject,
     StackOverflow(&'static str),
     StackUnderflow(&'static str),
     UnknownOpcode(&'static str, u16),
@@ -48,6 +49,7 @@ impl fmt::Display for ZErr {
                 req, num
             ),
             MissingOperand => write!(f, "Missing operand."),
+            NullObject => write!(f, "Null object reference."),
             StackOverflow(msg) => write!(f, "Stack overflow: {}", msg),
             StackUnderflow(msg) => write!(f, "Stack underflow: {}", msg),
             UnknownOpcode(msg, opcode) => write!(f, "Unknown {} opcode: 0x{:02x}", msg, opcode),

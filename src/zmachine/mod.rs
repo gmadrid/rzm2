@@ -3,6 +3,7 @@ mod constants;
 mod handle;
 mod header;
 mod memory;
+mod objects;
 mod opcode;
 mod processor;
 mod result;

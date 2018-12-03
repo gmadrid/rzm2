@@ -13,6 +13,7 @@ pub const HOF_GLOBAL_LOCATION: u16 = 0x0c;
 pub const HOF_STATIC_MEMORY_BASE: u16 = 0x0e;
 pub const HOF_FILE_LEN: u16 = 0x1a;
 pub const HOF_ABBREV_LOCATION: u16 = 0x18;
+pub const HOF_OTABLE_LOCATION: u16 = 0x0a;
 
 // Read a Story's Header information.
 // See ZSpec 11.
@@ -90,6 +91,14 @@ impl Header for ZHeader {
             self.memory
                 .borrow()
                 .read_word(ByteAddress::from_raw(HOF_ABBREV_LOCATION)),
+        )
+    }
+
+    fn otable_location(&self) -> ByteAddress {
+        ByteAddress::from_raw(
+            self.memory
+                .borrow()
+                .read_word(ByteAddress::from_raw(HOF_OTABLE_LOCATION)),
         )
     }
 }

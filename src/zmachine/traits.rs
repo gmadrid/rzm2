@@ -52,6 +52,7 @@ pub trait Header {
     fn global_location(&self) -> ByteAddress;
     fn high_memory_base(&self) -> ByteAddress;
     fn static_memory_base(&self) -> ByteAddress;
+    fn otable_location(&self) -> ByteAddress;
     fn version_number(&self) -> ZVersion;
 }
 
