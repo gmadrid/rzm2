@@ -166,6 +166,25 @@ impl fmt::Display for ZVariable {
     }
 }
 
+pub fn return_value<P, S, V>(
+    value: u16,
+    pc: &mut P,
+    stack: &Handle<S>,
+    variables: &mut V,
+) -> Result<()>
+where
+    P: PC,
+    S: Stack,
+    V: Variables,
+{
+    let return_pc = stack.borrow().return_pc();
+    let return_variable = stack.borrow().return_variable();
+    stack.borrow_mut().pop_frame()?;
+    variables.write_variable(return_variable, value)?;
+    pc.set_current_pc(return_pc);
+    Ok(())
+}
+
 pub mod zero_op {
     use super::*;
 
@@ -177,14 +196,8 @@ pub mod zero_op {
         S: Stack,
         V: Variables,
     {
-        // TODO: DRY this with the other return functions.
-        let return_pc = stack.borrow().return_pc();
-        let return_variable = stack.borrow().return_variable();
-        stack.borrow_mut().pop_frame()?;
-        variables.write_variable(return_variable, 1)?;
         debug!("rtrue");
-        pc.set_current_pc(return_pc);
-        Ok(())
+        return_value(1, pc, stack, variables)
     }
 
     // ZSpec: 0OP:178 0x02 print (literal-string)
@@ -252,13 +265,8 @@ pub mod one_op {
         V: Variables,
     {
         let result = operand.value(variables)?;
-        let return_pc = stack.borrow().return_pc();
-        let return_variable = stack.borrow().return_variable();
-        stack.borrow_mut().pop_frame()?;
-        variables.write_variable(return_variable, result)?;
         debug!("ret         {}", operand);
-        pc.set_current_pc(return_pc);
-        Ok(())
+        return_value(result, pc, stack, variables)
     }
 
     // ZSpec: 1OP:140 0x0c jump ?(label)
@@ -341,6 +349,8 @@ pub mod two_op {
             );
             let first_val = operands[0].value(variables);
             let second_val = operands[1].value(variables);
+
+            // TODO: this needs to deal with the case when there are > 2 arguments. It's a real thing.
 
             if first_val.is_ok() && second_val.is_ok() {
                 Ok(first_val.unwrap() == second_val.unwrap())
