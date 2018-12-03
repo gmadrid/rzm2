@@ -169,6 +169,24 @@ impl fmt::Display for ZVariable {
 pub mod zero_op {
     use super::*;
 
+    // ZSpec: 0OP:176 0x00 rtrue
+    // UNTESTED
+    pub fn o_176_rtrue<P, S, V>(pc: &mut P, stack: &Handle<S>, variables: &mut V) -> Result<()>
+    where
+        P: PC,
+        S: Stack,
+        V: Variables,
+    {
+        // TODO: DRY this with the other return functions.
+        let return_pc = stack.borrow().return_pc();
+        let return_variable = stack.borrow().return_variable();
+        stack.borrow_mut().pop_frame()?;
+        variables.write_variable(return_variable, 1)?;
+        debug!("rtrue");
+        pc.set_current_pc(return_pc);
+        Ok(())
+    }
+
     // ZSpec: 0OP:178 0x02 print (literal-string)
     // UNTESTED
     pub fn o_178_print<M, P>(
