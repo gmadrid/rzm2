@@ -183,7 +183,7 @@ pub mod zero_op {
         // TODO: This is not acceptible in a world with multiple output streams.
         debug!("print");
         let zstr = read_zstr_from_pc(&memory, abbrev_offset, pc)?;
-        println!("{}", zstr);
+        print!("{}", zstr);
         Ok(())
     }
 
@@ -269,6 +269,7 @@ where
     F: FnOnce(i16, bool) -> Result<bool>,
     P: PC,
 {
+    // TODO: do all offset handling (and reading from PC in interpret_offset_byte.
     let branch_on_truth = !((byte & 0b1000_0000) == 0);
     let offset = interpret_offset_byte(byte, pc);
 
@@ -317,6 +318,49 @@ pub mod two_op {
         })
     }
 
+    // ZSpec: 2OP:5 0x05 inc_chk (variable) value ?(label)
+    // UNTESTED
+    pub fn o_5_inc_chk<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
+    where
+        P: PC,
+        V: Variables,
+    {
+        let variable = ZVariable::from(operands[0].value(variables)? as u8);
+        let first_offset_byte = pc.next_byte();
+        branch(first_offset_byte, pc, |offset, branch_on_truth| {
+            debug!("inc_chk   {} {} ?{}({:x})", variable, operands[1],
+                   if branch_on_truth { "" } else { "~" },
+                   offset);
+
+            let old_value = variables.read_variable(variable)?;
+            let (result, overflow) = old_value.overflowing_add(1);
+            if overflow {
+                warn!("inc_chk {} causes overflow.", variable);
+            }
+            variables.write_variable(variable, result)?;
+
+            let test_value = operands[1].value(variables)?;
+            Ok(result > test_value)
+        })
+    }
+
+    // ZSpec: 2OP:9 0x09 and a b -> (result)
+    // UNTESTED
+    pub fn o_9_and<P, V>(pc: &mut P, variables: &mut V, operands: [ZOperand; 2]) -> Result<()>
+    where
+        P: PC,
+        V: Variables,
+    {
+        let store = ZVariable::from(pc.next_byte());
+
+        let lhs = operands[0].value(variables)?;
+        let rhs = operands[1].value(variables)?;
+
+        debug!("and       {} {} -> {}", operands[0], operands[1], store);
+
+        variables.write_variable(store, lhs & rhs)
+    }
+
     // ZSpec: 2OP:10 0x0A test_attr object attribute ?(label)
     // UNTESTED
     pub fn o_10_test_attr<P>(pc: &mut P, operands: [ZOperand; 2])
@@ -343,6 +387,7 @@ pub mod two_op {
     }
 
     // ZSpec: 2OP:15 0x0f loadw array word-index -> (result)
+    // UNTESTED
     pub fn o_15_loadw<M, P, V>(
         memory: &Handle<M>,
         pc: &mut P,
@@ -363,6 +408,30 @@ pub mod two_op {
         let byte_address = ByteAddress::from_raw(array).inc_by(2 * word_index);
         let value = memory.borrow().read_word(byte_address);
         variables.write_variable(store, value)
+    }
+
+    // ZSpec: 2OP:16 0x10 loadb array byte-index -> (result)
+    // UNTESTED
+    pub fn o_16_loadb<M, P, V>(
+        memory: &Handle<M>,
+        pc: &mut P,
+        variables: &mut V,
+        operands: [ZOperand; 2],
+    ) -> Result<()>
+    where
+        M: Memory,
+        P: PC,
+        V: Variables,
+    {
+        let store = ZVariable::from(pc.next_byte());
+        debug!("loadb     {} {} -> {}", operands[0], operands[1], store);
+
+        let array = operands[0].value(variables)?;
+        let byte_index = operands[1].value(variables)?;
+
+        let byte_address = ByteAddress::from_raw(array).inc_by(byte_index);
+        let value = memory.borrow().read_byte(byte_address);
+        variables.write_variable(store, u16::from(value))
     }
 
     // ZSpec: 2OP:20 0x14 add a b -> (result)
@@ -417,6 +486,8 @@ pub mod two_op {
 
 pub mod var_op {
     use super::*;
+
+    //
 
     // ZSpec: VAR:224 0x00 V1 call routine ...up to 3 args... -> (result)
     // UNTESTED
@@ -496,6 +567,23 @@ pub mod var_op {
             "put_prop   {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
+    }
+
+    // ZSpec: VAR:230 0x06 print_num value
+    // UNTESTED
+    pub fn o_230_print_num<V>(variables: &mut V, operands: [ZOperand; 4]) -> Result<()>
+    where
+        V: Variables,
+    {
+        debug!(
+            "print_num   {} {} {} {}",
+            operands[0], operands[1], operands[2], operands[3]
+        );
+
+        let num = operands[0].value(variables)?;
+        print!("{}", (num as i16));
+
+        Ok(())
     }
 }
 

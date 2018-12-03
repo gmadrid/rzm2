@@ -114,6 +114,9 @@ where
             }
         }
 
+        if byte & 0b0010_0000 == 0 {
+            self.match_long_opcode(opcode, [operands[0], operands[1]])
+        } else {
         match opcode {
             0 => var_op::o_224_call(
                 &mut self.pc,
@@ -124,7 +127,9 @@ where
             ).to_true(),
             1 => var_op::o_225_storew(&self.memory, &mut self.variables, operands).to_true(),
             3 => call_null(var_op::o_227_put_prop(operands)),
+            6 => var_op::o_230_print_num(&mut self.variables, operands).to_true(),
             _ => panic!("Unimplemented var opcode: {}", opcode),
+        }
         }
     }
 
@@ -148,11 +153,23 @@ where
             ZOperand::read_operand(&mut self.pc, ZOperandType::VariableType)
         };
 
+        self.match_long_opcode(opcode, operands)
+    }
+
+    fn match_long_opcode(&mut self, opcode: u8, operands: [ZOperand; 2]) -> Result<bool> {
         match opcode {
             0x01 => two_op::o_1_je(&mut self.pc, &mut self.variables, operands).to_true(),
+            0x05 => two_op::o_5_inc_chk(&mut self.pc, &mut self.variables, operands).to_true(),
+            0x09 => two_op::o_9_and(&mut self.pc, &mut self.variables, operands).to_true(),
             0x0a => call_null(two_op::o_10_test_attr(&mut self.pc, operands)),
             0x0d => two_op::o_13_store(&mut self.variables, operands).to_true(),
             0x0f => two_op::o_15_loadw(
+                &mut self.memory,
+                &mut self.pc,
+                &mut self.variables,
+                operands,
+            ).to_true(),
+            0x10 => two_op::o_16_loadb(
                 &mut self.memory,
                 &mut self.pc,
                 &mut self.variables,
