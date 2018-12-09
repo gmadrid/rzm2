@@ -1,7 +1,3 @@
-extern crate env_logger;
-extern crate log;
-extern crate rzm2;
-
 use std::fs::File;
 
 use rzm2::{new_story_processor, Result};

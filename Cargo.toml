@@ -2,6 +2,7 @@
 name = "rzm2"
 version = "0.1.0"
 authors = ["George Madrid <gmadrid@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 env_logger = "0.6.0"
