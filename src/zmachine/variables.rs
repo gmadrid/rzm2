@@ -104,8 +104,8 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use zmachine::fixtures::{TestMemory, TestStack};
-    use zmachine::handle::new_handle;
+    use crate::zmachine::fixtures::{TestMemory, TestStack};
+    use crate::zmachine::handle::new_handle;
 
     fn make_test_setup() -> ZVariables<TestMemory, TestStack> {
         ZVariables::new(

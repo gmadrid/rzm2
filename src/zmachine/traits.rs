@@ -150,8 +150,8 @@ pub trait Variables {
 #[cfg(test)]
 mod test {
     use super::*;
-    use zmachine::addressing::ByteAddress;
-    use zmachine::result::ZErr;
+    use crate::zmachine::addressing::ByteAddress;
+    use crate::zmachine::result::ZErr;
 
     #[test]
     fn test_bytes() {

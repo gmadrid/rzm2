@@ -144,9 +144,9 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use zmachine::fixtures::TestMemory;
-    use zmachine::handle::new_handle;
-    use zmachine::version::ZVersion;
+    use crate::zmachine::fixtures::TestMemory;
+    use crate::zmachine::handle::new_handle;
+    use crate::zmachine::version::ZVersion;
 
     #[test]
     fn test_zoffset() {

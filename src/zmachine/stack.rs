@@ -201,7 +201,7 @@ impl Stack for ZStack {
 #[cfg(test)]
 mod test {
     use super::*;
-    use zmachine::result::ZErr;
+    use crate::zmachine::result::ZErr;
 
     #[test]
     fn test_new() {
