@@ -149,8 +149,9 @@ impl From<ZOperand> for ZVariable {
     fn from(operand: ZOperand) -> ZVariable {
         match operand {
             ZOperand::SmallConstant(c) => c.into(),
+            ZOperand::LargeConstant(lc) => (lc as u8).into(),
             // TODO: XXX finish this.
-            _ => panic!("Not done yet. XXX"),
+            _ => unimplemented!("From<ZOperand> for ZVariable"),
         }
     }
 }
@@ -330,8 +331,8 @@ where
     if branch_on_truth == truth {
         // Branch!
         match offset {
-            0 => panic!("unimplemented: ret false"),
-            1 => panic!("unimplemented: ret true"),
+            0 => unimplemented!("ret false"),
+            1 => unimplemented!("ret true"),
             o => {
                 pc.offset_pc((o - 2) as isize);
             }
@@ -430,6 +431,7 @@ pub mod two_op {
             "test_attr   {} {} ?{:b} XXX",
             operands[0], operands[1], branch
         );
+        unimplemented!("test_attr")
     }
 
     // ZSpec: 2OP:13 0x0D store (variable) value
@@ -623,6 +625,7 @@ pub mod var_op {
             "put_prop   {} {} {} {}             XXX",
             operands[0], operands[1], operands[2], operands[3]
         );
+        unimplemented!("put_prop")
     }
 
     // ZSpec: VAR:229 0x05 print_char output_character_code

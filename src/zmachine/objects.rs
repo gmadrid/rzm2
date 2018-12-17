@@ -121,26 +121,32 @@ where
 
     fn set_object_child(&self, o: ZObject, c: ObjectNumber) -> Result<()> {
         // VNUM DEPEND
-        self.memory.borrow_mut().write_byte(o.0.inc_by(6), c.0 as u8)
+        self.memory
+            .borrow_mut()
+            .write_byte(o.0.inc_by(6), c.0 as u8)
     }
     fn set_object_sibling(&self, o: ZObject, s: ObjectNumber) -> Result<()> {
         // VNUM DEPEND
-        self.memory.borrow_mut().write_byte(o.0.inc_by(5), s.0 as u8)
+        self.memory
+            .borrow_mut()
+            .write_byte(o.0.inc_by(5), s.0 as u8)
     }
     fn set_object_parent(&self, o: ZObject, p: ObjectNumber) -> Result<()> {
         // VNUM DEPEND
-        self.memory.borrow_mut().write_byte(o.0.inc_by(4), p.0 as u8)
+        self.memory
+            .borrow_mut()
+            .write_byte(o.0.inc_by(4), p.0 as u8)
     }
 
     fn get_object_attribute(&self, o: ZObject, a: u8) -> Result<u8> {
         // VNUM DEPEND
         // range check.
-        let ba = o.0.inc_by(if a > 15 { 1} else { 0} );
+        let ba = o.0.inc_by(if a > 15 { 1 } else { 0 });
         let bitnum = a % 16;
         let word = self.memory.borrow().read_word(ba);
         Ok(((word >> (15 - bitnum)) & 0b1) as u8)
     }
-    
+
     fn set_object_attribute(&self, o: ZObject, a: u8, v: u8) -> Result<()> {
         // VNUM DEPEND
         // range check
