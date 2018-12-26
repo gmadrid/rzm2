@@ -143,37 +143,71 @@ fn assemble_word(end_of_string: bool, chars: [u8; 3]) -> u16 {
 mod tests {
     use super::*;
 
-    use std::iter::Peekable;
+    use super::super::handle::new_handle;
+    use super::super::fixtures::{ TestMemory, TestPC} ;
 
-    struct Sentinel<I: Iterator> {
-        p: Peekable<I>
+    struct ZChars<I> {
+        iter: I,
+        waiting: Option<u8>,
     }
 
-    impl<I: Iterator> Iterator for Sentinel<I> {
-        type Item = (bool, I::Item);
+    fn zchars<I: Iterator<Item=char>>(i: I) -> ZChars<I> {
+        ZChars { iter: i, waiting: None }
+    }
+
+    impl<I: Iterator<Item=char>> Iterator for ZChars<I> {
+        type Item = u8;
 
         fn next(&mut self) -> Option<Self::Item> {
-            let item = self.p.next();
-            match item {
-                None => None,
-                Some(it) => Some((if self.p.peek().is_none() { true } else {false}, it))
-            }
+            self.iter.next().map(|ch| {
+                match ch {
+                    'a'...'z' => { (ch as u8) - ('a' as u8) + 6 }
+                    _ => unimplemented!("conversion for char '{}' unimplemented", ch),
+                }
+            })
         }
     }
 
     fn encode_simple_string(st: &str) -> Vec<u8> {
-        st.chars().chunks(3).into_iter().peekable().map(|empty, chunk| {
-            let mut bytes = [5u8, 5, 5];
-            for ch in chunk.enumerate() {
+        let mut encoded = vec![];
 
-            }
-        });
-        vec![]
+        let foo = zchars(st.chars());
+        for zc in foo {
+
+        }
+        //for zc in ZChars{ iter: st.chars() }
+//        st.chars().map();
+//        for chunk in &st.chars().chunks(3) {
+//            let mut chs = [5u8, 5, 5];
+//            for (i, ch) in chunk.enumerate() {
+//                chs[i] = ch as u8;
+//            }
+//            let word = assemble_word(false, chs);
+//            encoded.push((word >> 8) as u8);
+//            encoded.push((word & 0xff) as u8);
+//        }
+//        let end_indicator_position = encoded.len() - 2;
+//        encoded[end_indicator_position] = encoded[end_indicator_position] | 0x80;
+//
+        encoded
     }
 
     #[test]
     fn test_assemble_word() {
         assert_eq!(0b0_11111_00000_11011, assemble_word(false, [0xff, 0xe0, 0x1b]));
         assert_eq!(0b1_00101_10010_00100, assemble_word(true, [5, 18, 4]));
+    }
+
+    #[test]
+    fn test_encode_string() {
+        let mem = new_handle(TestMemory::new(0));
+        let mut pc = TestPC::new(0, encode_simple_string("blasphemy"));
+        eprintln!("pc = {:#?}", pc.values);
+        for val in &pc.values {
+            eprintln!("   = {:08b}", val);
+        }
+        let foo = read_zstr_from_pc(&mem, ByteAddress::from_raw(0), &mut pc);
+        eprintln!("foo = {:?}", foo.unwrap());
+            assert_eq!(vec![32u8, 2], encode_simple_string("Hi there"))
     }
 }
