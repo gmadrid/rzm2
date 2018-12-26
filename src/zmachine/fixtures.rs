@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::addressing::ZOffset;
-use super::opcode::ZVariable;
+use super::opcodes::ZVariable;
 use super::result::{Result, ZErr};
-use super::traits::{Memory, Stack, Variables, PC};
+use super::traits::{Memory, /*Stack,*/ Variables, PC};
 
 pub struct TestPC {
     pub pc: usize,
@@ -89,63 +89,63 @@ impl Memory for TestMemory {
     }
 }
 
-#[derive(Default)]
-pub struct TestStack {
-    pub arr: Vec<u8>, // a very small stack.
-    pub map: HashMap<u8, u16>,
-}
-
-impl TestStack {
-    pub fn new(size: usize) -> TestStack {
-        TestStack {
-            arr: vec![0; size],
-            ..TestStack::default()
-        }
-    }
-}
-
-impl Stack for TestStack {
-    fn push_byte(&mut self, val: u8) -> Result<()> {
-        self.arr.push(val);
-        Ok(())
-    }
-    fn pop_byte(&mut self) -> Result<u8> {
-        self.arr
-            .pop()
-            .ok_or(ZErr::StackUnderflow("Underflow in TestStack"))
-    }
-
-    fn read_local(&self, l: u8) -> Result<u16> {
-        let value = if self.map.contains_key(&l) {
-            self.map[&l]
-        } else {
-            0
-        };
-        Ok(value)
-    }
-
-    fn write_local(&mut self, l: u8, val: u16) -> Result<()> {
-        self.map.insert(l, val);
-        Ok(())
-    }
-
-    fn push_frame(
-        &mut self,
-        _return_pc: usize,
-        _num_locals: u8,
-        _return_var: ZVariable,
-        _operands: &[u16],
-    ) -> Result<()> {
-        panic!("unimplemented");
-    }
-
-    fn pop_frame(&mut self) -> Result<()> {
-        Ok(())
-    }
-    fn return_pc(&self) -> usize {
-        panic!("unimplemented")
-    }
-    fn return_variable(&self) -> ZVariable {
-        panic!("unimplemented")
-    }
-}
+//#[derive(Default)]
+//pub struct TestStack {
+//    pub arr: Vec<u8>, // a very small stack.
+//    pub map: HashMap<u8, u16>,
+//}
+//
+//impl TestStack {
+//    pub fn new(size: usize) -> TestStack {
+//        TestStack {
+//            arr: vec![0; size],
+//            ..TestStack::default()
+//        }
+//    }
+//}
+//
+//impl Stack for TestStack {
+//    fn push_byte(&mut self, val: u8) -> Result<()> {
+//        self.arr.push(val);
+//        Ok(())
+//    }
+//    fn pop_byte(&mut self) -> Result<u8> {
+//        self.arr
+//            .pop()
+//            .ok_or(ZErr::StackUnderflow("Underflow in TestStack"))
+//    }
+//
+//    fn read_local(&self, l: u8) -> Result<u16> {
+//        let value = if self.map.contains_key(&l) {
+//            self.map[&l]
+//        } else {
+//            0
+//        };
+//        Ok(value)
+//    }
+//
+//    fn write_local(&mut self, l: u8, val: u16) -> Result<()> {
+//        self.map.insert(l, val);
+//        Ok(())
+//    }
+//
+//    fn push_frame(
+//        &mut self,
+//        _return_pc: usize,
+//        _num_locals: u8,
+//        _return_var: ZVariable,
+//        _operands: &[u16],
+//    ) -> Result<()> {
+//        panic!("unimplemented");
+//    }
+//
+//    fn pop_frame(&mut self) -> Result<()> {
+//        Ok(())
+//    }
+//    fn return_pc(&self) -> usize {
+//        panic!("unimplemented")
+//    }
+//    fn return_variable(&self) -> ZVariable {
+//        panic!("unimplemented")
+//    }
+//}

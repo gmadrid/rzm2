@@ -1,6 +1,7 @@
+/*
 use super::handle::Handle;
-use super::opcode::{one_op, two_op, var_op, zero_op};
-use super::opcode::{ZOperand, ZOperandType};
+use super::opcodes::{one_op, two_op, var_op, zero_op};
+use super::opcodes::{ZOperand, ZOperandType};
 use super::opcode::{
     EXTENDED_OPCODE_SENTINEL, OPCODE_TYPE_MASK, SHORT_OPCODE_TYPE_MASK, VAR_OPCODE_TYPE_MASK,
 };
@@ -205,3 +206,4 @@ fn call_null(_n: ()) -> Result<bool> {
 mod test {
     // One day, you might want to figure out how to test this.
 }
+*/

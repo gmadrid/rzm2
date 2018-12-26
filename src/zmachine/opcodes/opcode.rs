@@ -26,122 +26,8 @@ const SMALL_CONSTANT_TYPE_BITS: u8 = 0b01;
 const VARIABLE_TYPE_BITS: u8 = 0b10;
 const OMITTED_TYPE_BITS: u8 = 0b11;
 
-#[derive(Clone, Copy, Debug)]
-pub enum ZOperandType {
-    LargeConstantType,
-    SmallConstantType,
-    VariableType,
-    OmittedType,
-}
-
-impl From<u8> for ZOperandType {
-    fn from(byte: u8) -> ZOperandType {
-        // from must never fail, so it ignores the top bits.
-        match byte & 0b11 {
-            LARGE_CONSTANT_TYPE_BITS => ZOperandType::LargeConstantType,
-            SMALL_CONSTANT_TYPE_BITS => ZOperandType::SmallConstantType,
-            VARIABLE_TYPE_BITS => ZOperandType::VariableType,
-            OMITTED_TYPE_BITS => ZOperandType::OmittedType,
-            _ => panic!("This can't happen?"),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ZOperand {
-    LargeConstant(u16),
-    SmallConstant(u8),
-    Var(ZVariable),
-    Omitted,
-}
-
-impl ZOperand {
-    pub fn read_operand<P>(pc: &mut P, otype: ZOperandType) -> ZOperand
-    where
-        P: PC,
-    {
-        match otype {
-            ZOperandType::LargeConstantType => {
-                // Large constant
-                let lc = pc.next_word();
-                ZOperand::LargeConstant(lc)
-            }
-            ZOperandType::SmallConstantType => {
-                // Small constant
-                let sc = pc.next_byte();
-                ZOperand::SmallConstant(sc)
-            }
-            ZOperandType::VariableType => {
-                // Variable
-                let var = pc.next_byte();
-                ZOperand::Var(var.into())
-            }
-            // Omitted
-            ZOperandType::OmittedType => ZOperand::Omitted,
-        }
-    }
-
-    fn value<V>(&self, variables: &mut V) -> Result<u16>
-    where
-        V: Variables,
-    {
-        match *self {
-            ZOperand::LargeConstant(val) => Ok(val),
-            ZOperand::SmallConstant(val) => Ok(u16::from(val)),
-            ZOperand::Var(var) => variables.read_variable(var),
-            ZOperand::Omitted => Err(ZErr::MissingOperand),
-        }
-    }
-}
-
-impl Default for ZOperand {
-    fn default() -> ZOperand {
-        ZOperand::Omitted
-    }
-}
-
-impl fmt::Display for ZOperand {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::ZOperand::*;
-        match *self {
-            LargeConstant(c) => write!(f, "#{:04x}", c),
-            SmallConstant(c) => write!(f, "#{:02x}", c),
-            Var(v) => write!(f, "{}", v),
-            Omitted => write!(f, "_"),
-        }
-    }
-}
-
 pub const MAX_LOCAL: u8 = 0x0e;
 pub const MAX_GLOBAL: u8 = 0xef;
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ZVariable {
-    Stack,
-    Local(u8),  // 0..MAX_LOCAL
-    Global(u8), // 0..MAX_GLOBAL
-}
-
-impl From<u8> for ZVariable {
-    fn from(byte: u8) -> ZVariable {
-        match byte {
-            0 => ZVariable::Stack,
-            1...0x0f => ZVariable::Local(byte - 1),
-            0x10...0xff => ZVariable::Global(byte - 0x10),
-            _ => panic!("The compiler made me do this."),
-        }
-    }
-}
-
-impl From<ZVariable> for u8 {
-    fn from(var: ZVariable) -> u8 {
-        match var {
-            ZVariable::Stack => 0x00,
-            ZVariable::Local(l) => l + 0x01,
-            ZVariable::Global(g) => g + 0x10,
-        }
-    }
-}
 
 // This is mainly for "indirect" operands.
 // panic! if value is out of range.
@@ -152,17 +38,6 @@ impl From<ZOperand> for ZVariable {
             ZOperand::LargeConstant(lc) => (lc as u8).into(),
             // TODO: XXX finish this.
             _ => unimplemented!("From<ZOperand> for ZVariable"),
-        }
-    }
-}
-
-impl fmt::Display for ZVariable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::ZVariable::*;
-        match *self {
-            Stack => write!(f, "sp"),
-            Local(l) => write!(f, "l{:01x}", l),
-            Global(g) => write!(f, "g{:02x}", g),
         }
     }
 }
@@ -243,27 +118,6 @@ pub mod zero_op {
 pub mod one_op {
     use super::*;
 
-    // ZSpec: 1OP:128 0x00 jz a ?(label)
-    // UNTESTED
-    pub fn o_128_jz<P, V>(pc: &mut P, variables: &mut V, operand: ZOperand) -> Result<()>
-    where
-        P: PC,
-        V: Variables,
-    {
-        let first_offset_byte = pc.next_byte();
-        branch(first_offset_byte, pc, |offset, branch_on_truth| {
-            debug!(
-                "jz         {} ?{}(x{:x})",
-                operand,
-                if branch_on_truth { "" } else { "~" },
-                offset
-            );
-
-            // TODO: what if this is Omitted?
-            Ok(operand.value(variables)? == 0)
-        })
-    }
-
     // ZSpec: 1OP:139 0x0b ret value
     // UNTESTED
     pub fn o_139_ret<P, S, V>(
@@ -295,50 +149,6 @@ pub mod one_op {
         pc.offset_pc(offset);
         Ok(())
     }
-}
-
-fn interpret_offset_byte<P>(byte: u8, pc: &mut P) -> i16
-where
-    P: PC,
-{
-    // TODO: move all of the pc manipulation here so that it can be called from all branches.
-    if byte & 0b0100_0000 != 0 {
-        // One byte only.
-        i16::from(byte & 0b0011_1111)
-    } else {
-        let second_byte = pc.next_byte();
-        let mut offset: u16 = ((byte as u16 & 0b0011_1111) << 8) + second_byte as u16;
-        // Check for a negative 14-bit value, and sign extend to 16-bit if necessary.
-        if offset & 0b0010_0000_0000_0000 != 0 {
-            offset |= 0b1100_0000_0000_0000;
-        }
-
-        offset as i16
-    }
-}
-
-fn branch<P, F>(byte: u8, pc: &mut P, tst: F) -> Result<()>
-where
-    F: FnOnce(i16, bool) -> Result<bool>,
-    P: PC,
-{
-    // TODO: do all offset handling (and reading from PC in interpret_offset_byte.
-    let branch_on_truth = !((byte & 0b1000_0000) == 0);
-    let offset = interpret_offset_byte(byte, pc);
-
-    let truth = tst(offset, branch_on_truth)?;
-
-    if branch_on_truth == truth {
-        // Branch!
-        match offset {
-            0 => unimplemented!("ret false"),
-            1 => unimplemented!("ret true"),
-            o => {
-                pc.offset_pc((o - 2) as isize);
-            }
-        }
-    }
-    Ok(())
 }
 
 pub mod two_op {

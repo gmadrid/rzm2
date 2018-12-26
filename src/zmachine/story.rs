@@ -1,3 +1,4 @@
+/*
 use std::io::Read;
 
 use super::addressing::ZPC;
@@ -22,3 +23,4 @@ pub fn new_story_processor<T: Read>(
 
     Ok(ZProcessor::new(story_h, header, pc, stack_h, variables))
 }
+*/

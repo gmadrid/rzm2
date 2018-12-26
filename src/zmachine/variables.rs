@@ -1,3 +1,4 @@
+/*
 use super::addressing::ByteAddress;
 use super::handle::Handle;
 use super::opcode::{self, ZVariable};
@@ -200,3 +201,4 @@ mod test {
         );
     }
 }
+*/

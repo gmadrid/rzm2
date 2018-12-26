@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use super::addressing::{ByteAddress, WordAddress, ZOffset};
 use super::handle::Handle;
 use super::result::Result;
@@ -121,4 +123,57 @@ fn break_apart_word(word: u16) -> (bool, [u8; 3]) {
     let byte3 = word & 0b0000_0000_0001_1111;
 
     (done, [byte1 as u8, byte2 as u8, byte3 as u8])
+}
+
+// Assemble three "u5"s into a Z-string encoded u16. The top bit will indicate whether
+// this is the last word in the string, as specified in the ZSpec.
+//
+// All input chars will be truncated to 5-bits.
+fn assemble_word(end_of_string: bool, chars: [u8; 3]) -> u16 {
+    let done_bit = if end_of_string { 0b1000_0000_0000_0000u16 } else { 0 };
+    let piece1 = (u16::from(chars[0]) & 0b11111) << 10;
+    let piece2 = (u16::from(chars[1]) & 0b11111) << 5;
+    let piece3 = (u16::from(chars[2]) & 0b11111);
+
+    done_bit | piece1 | piece2 | piece3
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::iter::Peekable;
+
+    struct Sentinel<I: Iterator> {
+        p: Peekable<I>
+    }
+
+    impl<I: Iterator> Iterator for Sentinel<I> {
+        type Item = (bool, I::Item);
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let item = self.p.next();
+            match item {
+                None => None,
+                Some(it) => Some((if self.p.peek().is_none() { true } else {false}, it))
+            }
+        }
+    }
+
+    fn encode_simple_string(st: &str) -> Vec<u8> {
+        st.chars().chunks(3).into_iter().peekable().map(|empty, chunk| {
+            let mut bytes = [5u8, 5, 5];
+            for ch in chunk.enumerate() {
+
+            }
+        });
+        vec![]
+    }
+
+    #[test]
+    fn test_assemble_word() {
+        assert_eq!(0b0_11111_00000_11011, assemble_word(false, [0xff, 0xe0, 0x1b]));
+        assert_eq!(0b1_00101_10010_00100, assemble_word(true, [5, 18, 4]));
+    }
 }
